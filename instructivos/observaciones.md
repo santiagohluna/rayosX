@@ -46,4 +46,4 @@ Para el caso de XMM-Newton, seleccionar los directorios con los ODF correspondie
 
 **Nota**: Conviene crear un script que ejecute la descarga de las observaciones para cada misión.
 
-[Volver al menú principal](instructivos.md).
+[Volver al menú principal](../README.md).

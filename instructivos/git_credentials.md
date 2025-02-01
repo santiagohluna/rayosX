@@ -6,4 +6,4 @@
 4. Descargar gcm e instalarlo con: `sudo dpkg -i <path-to-package>`.
 5. Configurar gcm: `git-credential-manager configure`.
 
-[Volver al menú principal](instructivos.md).
+[Volver al menú principal](../README.md).

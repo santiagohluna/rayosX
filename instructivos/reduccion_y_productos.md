@@ -93,4 +93,4 @@ Para comenzar, se deben reptetir los pasos 1, 2 y 4 de los que se deben seguir p
 
    - `specgroup spectrumset=PN_src_spectrum.fits mincounts=16 oversample=3 rmfset=PN_src.rmf arfset=PN_src.arf backgndset=PN_src_bkg_spectrum.fits groupedset=PN_src_grp.fits`
   
-[Volver al menú principal](instructivos.md)
+[Volver al menú principal](../README.md)
