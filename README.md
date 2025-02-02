@@ -1,4 +1,4 @@
-# analisisRX
+# Análisis de fuentes astronómicas de Rayos X
 
 Repositorio con información y scripts para el análisis de datos de observaciones astronómicas de fuentes de Rayos X.
 
