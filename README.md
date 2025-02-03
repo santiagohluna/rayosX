@@ -9,4 +9,5 @@ A continuación se muestra una lista con instructivos relevantes para el anális
 - [Agregar un repositorio remoto](instructivos/add_remote.md).
 - [Gestionar credenciales de GitHub](instructivos/git_credentials.md).
 - [Búsqueda y descarga de observaciones](instructivos/observaciones.md).
+- [Sincronizar los CCF](instructivos/sincronizar_ccf.md).
 - [Reducción y análisis de datos de observaciones de XMM Newton](instructivos/reduccion_y_productos.md).
