@@ -7,8 +7,8 @@ A continuación se listan losp pasos a seguir para recalibrar, filtrar y obtener
 ## Reprocesamiento
 
 1. Apuntar la variable `SAS_ODF` a la carpeta donde se encuentran las observaciones, p. ej.:
-   `export SAS_ODF=/home/shluna/Proyectos/RX/objetos/rtcru/observaciones/xmm/0831790801`
-   Antes de continuar, se debe verificar que la variable `SAS_CCFPATH` esté definida en `.bashrc` apuntando a la carpeta donde se encuantran los archivos de calibración.
+   `export SAS_ODF=/home/shluna/Proyectos/RX/objetos/rtcru/observaciones/xmm/0831790801/ODF`
+   Antes de continuar, se debe verificar que la variable `SAS_CCFPATH` esté definida en `.bashrc` apuntando a la carpeta donde se encuentran los archivos de calibración.
 2. Luego, ejecutar la tareas `cifbuild`, la cual crea el archivo `cif.ccf`.
 3. Apuntar la variable `SAS_CCF` a este último archivo:`export SAS_CCF=cif.ccf`.
 4. Ejecutar la tarea `odfingest` para actualizar el archivo de resumen `*SUM.SAS`.
