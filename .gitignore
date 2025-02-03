@@ -4,3 +4,8 @@ sas/
 caldb/
 objetos/observaciones/*
 !*.sh
+*.fit
+*.fits
+*.ds
+*.cif
+*.SAS
