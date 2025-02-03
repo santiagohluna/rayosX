@@ -37,11 +37,13 @@ while [[ $op -ne 3 ]]; do
             fi
             cd xmm
             wget -nH --no-check-certificate --cut-dirs=4 -r -w1 -l0 -c -N -np -R 'index*' -erobots=off https://heasarc.gsfc.nasa.gov/FTP/xmm/data/rev0//${obsid}/ODF/
-            cd ..
+            cd ${obsid}/ODF
+            echo -e "\nDescomprimiendo los ODF"
+            gzip -d *.gz
+            echo -e "\n¡Listo!"
+            cd ../../../
         fi
-        echo " "
-        echo "Descarga completa."
-        echo " "
+        echo -e "\nDescarga completa.\n"
     elif [[ $op -eq 3 ]]; then
         break
     else
