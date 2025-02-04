@@ -51,19 +51,24 @@ La curva de luz resultante puede ser visualizada usando dsplot: `dsplot table=ra
 
    - `export SAS_ODF=/home/shluna/Proyectos/RX/objetos/rtcru/observaciones/xmm/0831790801`
    - `export SAS_CCF=ccf.cif`
-2. Abrir las imágenes `PNclean.img`, `M1clean.img` y `M2clean.img` usando `ds9` y seleccionar una región circular entorno a la fuente de la que se pretende generar la curva de luz. Haciendo doble-click sobre la región circular, y eligiendo coordenadas físicas en el despliegue, obtener las coordenadas del centro y el radio:
+2. Abrir las imágenes `PNclean.img`, `M1clean.img` y `M2clean.img` usando `ds9` y seleccionar una región circular entorno a la fuente de la que se pretende generar la curva de luz. Haciendo doble-click sobre la región circular, y eligiendo coordenadas físicas en el despliegue, obtener las coordenadas del centro y el radio.
 
 3. Extraer la curva de luz de la fuente usando la región elegida e incluyendo una selección de eventos de calidad apropiada para la curva de luz y un agrupamiento de, por ejemplo, 5 segundos:
 
-   - `evselect table=PNclean.fits energycolumn=PI expression='(FLAG==0)&& (PATTERN<=4) && (PI in [300:10000]) && ((X,Y) IN circle(26996.578,24240.85,400.0))' withrateset=yes rateset=PN_src_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes`
-   - 
+   - `evselect table=PNclean.fits energycolumn=PI expression='(FLAG==0)&& (PATTERN<=4) && (PI in [300:10000]) && ((X,Y) IN ... ' withrateset=yes rateset=PN_src_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes`
+   - `evselect table=M1clean.fits energycolumn=PI expression='(FLAG==0)&& (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN circle(26996.578,24240.85,400.0))' withrateset=yes rateset=M1_src_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes`
+   - `evselect table=M2clean.fits energycolumn=PI expression='(FLAG==0)&& (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN circle(26996.578,24240.85,400.0))' withrateset=yes rateset=M2_src_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes`
 4. Repetir el paso 2 para seleccionar una región con el fondo.
 5. Extraer la curva de luz del fondo, usando las mismas expresiones que para la fuente:
 
-   `evselect table=PNclean.fits energycolumn=PI expression='(FLAG==0) && (PATTERN<=4) && (PI in [300:10000]) && ((X,Y) IN circle(25434.659,23330.045,1000.00))' withrateset=yes rateset=PN_bkg_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes`
+   - `evselect table=PNclean.fits energycolumn=PI expression='(FLAG==0) && (PATTERN<=4) && (PI in [300:10000]) && ((X,Y) IN circle(25434.659,23330.045,1000.00))' withrateset=yes rateset=PN_bkg_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes`
+   - `evselect table=M1clean.fits energycolumn=PI expression='(FLAG==0)&& (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN circle(26996.578,24240.85,400.0))' withrateset=yes rateset=M1_bkg_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes`
+   - `evselect table=M2clean.fits energycolumn=PI expression='(FLAG==0)&& (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN circle(26996.578,24240.85,400.0))' withrateset=yes rateset=M2_bkg_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes`
 6. Estas curvas de luz deben ser corregidas por varios efectos que modifican la eficiencia del detector como el viñeteo, los pixeles malos o calientes, variación de la PSF y eficiencia cuántica, así como efectos de la estabilidad del satélite durante la exposición, como tiempos muertos o GTIs. La tarea `epiclccorr` de SAS realiza todas estas correcciones automáticamente por nosotros. Para ello deben suministrarse tanto la curva de luz de la fuente como la del fondo, así como la lista de eventos original filtrada:
 
-   `epiclccorr srctslist=PN_src_raw.lc eventlist=PNclean.fits outset=PN_lccorr.lc bkgtslist=PN_bkg_raw.lc withbkgset=yes applyabsolutecorrections=yes`
+   - `epiclccorr srctslist=PN_src_raw.lc eventlist=PNclean.fits outset=PN_lccorr.lc bkgtslist=PN_bkg_raw.lc withbkgset=yes applyabsolutecorrections=yes`
+   - `epiclccorr srctslist=M1_src_raw.lc eventlist=M1clean.fits outset=M1_lccorr.lc bkgtslist=M1_bkg_raw.lc withbkgset=yes applyabsolutecorrections=yes`
+   - `epiclccorr srctslist=M2_src_raw.lc eventlist=M2clean.fits outset=M"_lccorr.lc bkgtslist=M2_bkg_raw.lc withbkgset=yes applyabsolutecorrections=yes`
 7. La curva de luz resultante puede graficarse con `dsplot`, `fplot` o revisarse con `fv`:
 
    `dsplot table=PN_lccorr.lc withx=yes x=TIME withy=yes y=RATE`
@@ -75,22 +80,39 @@ Para comenzar, se deben reptetir los pasos 1, 2 y 4 de los que se deben seguir p
 1. Extraer el espectro de la fuente usando las expresiones de selección similares a las usadas para obtener las curvas de luz, y restringiendo los patrones a simples y dobles. Notar el rango de canales utilizados.
 
    - `evselect table=PNclean.fits withspectrumset=yes spectrumset=PN_src_spectrum.fits energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=20479 expression='(FLAG==0) && (PATTERN<=4) && ((X,Y) IN circle(26996.578,24240.85,400.00))'`
+   - `evselect table=M1clean.fits withspectrumset=yes spectrumset=M1_src_spectrum.fits energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=11999 expression='(FLAG==0) && (PATTERN<=12) && ((X,Y) IN circle(26996.578,24240.85,400.00))'`
+   - `evselect table=M2clean.fits withspectrumset=yes spectrumset=M2_src_spectrum.fits energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=11999 expression='(FLAG==0) && (PATTERN<=12) && ((X,Y) IN circle(26996.578,24240.85,400.00))'`
 
 2. Extraer el espectro del fondo:
 
    - `evselect table=PNclean.fits withspectrumset=yes spectrumset=PN_src_bkg_spectrum.fits energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=20479 expression='(FLAG==0) && (PATTERN<=4) && ((X,Y) IN circle(25434.659,23330.045,1000.0))'`
+   - `evselect table=M1clean.fits withspectrumset=yes spectrumset=M1_src_bkg_spectrum.fits energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=11999 expression='(FLAG==0) && (PATTERN<=12) && ((X,Y) IN circle(25434.659,23330.045,1000.0))'`
+   - `evselect table=M2clean.fits withspectrumset=yes spectrumset=M2_src_bkg_spectrum.fits energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=11999 expression='(FLAG==0) && (PATTERN<=12) && ((X,Y) IN circle(25434.659,23330.045,1000.0))'`
 3. Calcular el area de las regiones usadas para extraer la fuente y el fondo necesarias para pesar correctamente sus flujos mutuos. Las áreas son introducidas en un campo del header de los espectros denominado `BACKSCAL`:
 
-   - `backscale spectrumset=PN_src_spectrum.fits badpixlocation=PNclean.fits`
-   - `backscale spectrumset=PN_src_bkg_spectrum.fits badpixlocation=PNclean.fits`
+   - Para EPIC-pn:
+     - `backscale spectrumset=PN_src_spectrum.fits badpixlocation=PNclean.fits`
+     - `backscale spectrumset=PN_src_bkg_spectrum.fits badpixlocation=PNclean.fits`
+   - Para EPIC-MOS 1:
+     - `backscale spectrumset=M1_src_spectrum.fits badpixlocation=M1clean.fits`
+     - `backscale spectrumset=M1_src_bkg_spectrum.fits badpixlocation=M1clean.fits`
+   - Para EPIC-MOS 2:
+     - `backscale spectrumset=M2_src_spectrum.fits badpixlocation=M2clean.fits`
+     - `backscale spectrumset=M2_src_bkg_spectrum.fits badpixlocation=M2clean.fits`
 4. Usar la tarea rmfgen para crear una matriz de redistribución para el espectro extraído (esto puede llevar más de 30 minutos en computadoras pequeñas):
 
    - `rmfgen spectrumset=PN_src_spectrum.fits rmfset=PN_src.rmf`
+   - `rmfgen spectrumset=M1_src_spectrum.fits rmfset=M1_src.rmf`
+   - `rmfgen spectrumset=M2_src_spectrum.fits rmfset=M2_src.rmf`
 5. Generar la matriz auxiliar. Para fuentes puntuales usar extendedsource=no detmaptype=psf. Para fuentes extendidas usar extendedsource=yes detmaptype=flat o bien generar un mapa de exposición con la tarea expmap).
 
    - `arfgen spectrumset=PN_src_spectrum.fits arfset=PN_src.arf withrmfset=yes rmfset=PN_src.rmf badpixlocation=PNclean.fits extendedsource=no detmaptype=psf`
+   - `arfgen spectrumset=M1_src_spectrum.fits arfset=M1_src.arf withrmfset=yes rmfset=M1_src.rmf badpixlocation=M1clean.fits extendedsource=no detmaptype=psf`
+   - `arfgen spectrumset=M2_src_spectrum.fits arfset=M2_src.arf withrmfset=yes rmfset=M2_src.rmf badpixlocation=M2clean.fits extendedsource=no detmaptype=psf`
 6. Reagrupar el espectro y vincularlo a los archivos asociados tales como el espectro del fondo y las matrices (RMF y ARF). En el ejemplo reagrupamos a un mínimo de 16 cuentas por canal asegurando que el reagrupamiento no exceda un factor 3 en la pérdida de resolución:
 
    - `specgroup spectrumset=PN_src_spectrum.fits mincounts=16 oversample=3 rmfset=PN_src.rmf arfset=PN_src.arf backgndset=PN_src_bkg_spectrum.fits groupedset=PN_src_grp.fits`
+   - `specgroup spectrumset=M1_src_spectrum.fits mincounts=16 oversample=3 rmfset=M1_src.rmf arfset=M1_src.arf backgndset=M1_src_bkg_spectrum.fits groupedset=M1_src_grp.fits`
+   - `specgroup spectrumset=M2_src_spectrum.fits mincounts=16 oversample=3 rmfset=M2_src.rmf arfset=M2_src.arf backgndset=M2_src_bkg_spectrum.fits groupedset=M2_src_grp.fits`
   
 [Volver al menú principal](../README.md)
