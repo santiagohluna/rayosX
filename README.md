@@ -12,3 +12,9 @@ A continuación se muestra una lista con instructivos relevantes para el anális
 - [Sincronizar los CCF](instructivos/sincronizar_ccf.md).
 - [Reducción y análisis de datos de observaciones de XMM Newton](instructivos/reduccion_y_productos.md).
 - [Obtención de curvas de luz y espectros a partir de las observaciones de NuSTAR](instructivos/analisis_nustar.md).
+
+## Herramientas
+
+- [Script para descargar las observaciones "crudas" de NuSTAR y XMM-Newton](tools/download_obs.sh).
+- [Script para el reprocesamiento y filtrado de la lista de eventos de observaciones de XMM-Newton](tools/xmmpipeline.sh).
+- [Script para la obtención de curvas de luz y espectros a partir de las observaciones de XMM-Newton](tools/xmmproducts.sh).
