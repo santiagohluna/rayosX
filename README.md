@@ -11,3 +11,4 @@ A continuación se muestra una lista con instructivos relevantes para el anális
 - [Búsqueda y descarga de observaciones](instructivos/observaciones.md).
 - [Sincronizar los CCF](instructivos/sincronizar_ccf.md).
 - [Reducción y análisis de datos de observaciones de XMM Newton](instructivos/reduccion_y_productos.md).
+- [Obtención de curvas de luz y espectros a partir de las observaciones de NuSTAR](instructivos/analisis_nustar.md).
