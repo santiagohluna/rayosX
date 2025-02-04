@@ -20,7 +20,7 @@ export SAS_ODF=${indir}
 echo -e '\nLas observaciones se encuentran en:'
 echo $SAS_ODF
 
-echo -e '\nIngrese el camino hacia el directorio donde se almacenan los resultados de la reducción:'
+echo -e '\nIngrese el camino hacia el directorio donde se van a almacenar los resultados de la reducción:'
 read outdir
 
 # Crear el directorio de salida si no existe.
