@@ -30,6 +30,11 @@ while [[ $op -ne 3 ]]; do
             wget -nH --no-check-certificate --cut-dirs=6 -r -w1 -l0 -c -N -np -R 'index*' -erobots=off https://heasarc.gsfc.nasa.gov/FTP/nustar/data/obs/${obsid:1:2}/${obsid:0:1}//${obsid}/auxil/
             wget -nH --no-check-certificate --cut-dirs=6 -r -w1 -l0 -c -N -np -R 'index*' -erobots=off https://heasarc.gsfc.nasa.gov/FTP/nustar/data/obs/${obsid:1:2}/${obsid:0:1}//${obsid}/hk/
             wget -nH --no-check-certificate --cut-dirs=6 -r -w1 -l0 -c -N -np -R 'index*' -erobots=off https://heasarc.gsfc.nasa.gov/FTP/nustar/data/obs/${obsid:1:2}/${obsid:0:1}//${obsid}/event_uf/
+            echo -e "\nDescomprimiendo los archivos."
+            gzip -d ${obsid}/auxil/*.gz
+            gzip -d ${obsid}/hk/*.gz
+            gzip -d ${obsid}/event_uf/*.gz
+            echo -e "\n¡Listo!"
             cd ..
         elif [[ $op -eq 2 ]]; then
             if [ ! -d xmm ]; then
