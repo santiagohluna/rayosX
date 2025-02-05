@@ -1,0 +1,14 @@
+# Carpeta donde se encuentran las observaciones
+/home/shluna/Proyectos/rayosX/objetos/observaciones/rtcru/xmm/0920750101/ODF
+# Región correspondiente a la fuente en EPIC-PN 
+srcPN.reg
+# Región correspondiente a la fuente en EPIC-MOS1
+srcM1.reg
+# Región correspondiente a la fuente en EPIC-MOS2
+srcM2.reg
+# Región correspondiente al background en EPIC-PN 
+bgPN.reg
+# Región correspondiente al background en EPIC-MOS1
+bgM1.reg
+# Región correspondiente al background en EPIC-MOS2
+bgM2.reg
