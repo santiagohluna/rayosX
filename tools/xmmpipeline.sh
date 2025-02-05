@@ -11,17 +11,19 @@ sasinit
 
 ## Reprocesamiento de las observaciones
 
-echo -e '\nIngrese el camino hacia el directorio donde se encuentran las observaciones:'
-read indir
+if [ "$#" -eq 0 ]
+then
+    read -p 'Ingrese el camino hacia el directorio donde se encuentran las observaciones:' -e indir
+else
+    indir=$1
+fi
 
 # 1. Apuntar la variable `SAS_ODF` a la carpeta donde se encuentran las observaciones
 export SAS_ODF=${indir}
 
-echo -e '\nLas observaciones se encuentran en:'
-echo $SAS_ODF
+echo -e "\nLas observaciones se encuentran en: $SAS_ODF"
 
-echo -e '\nIngrese el camino hacia el directorio donde se van a almacenar los resultados de la reducción:'
-read outdir
+read -p "\nIngrese el camino hacia el directorio donde se van a almacenar los resultados de la reducción: " -e outdir
 
 # Crear el directorio de salida si no existe.
 if [ ! -d $outdir ]; then
