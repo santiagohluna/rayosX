@@ -18,3 +18,7 @@ A continuación se muestra una lista con instructivos relevantes para el anális
 - [Script para descargar las observaciones "crudas" de NuSTAR y XMM-Newton](tools/download_obs.sh).
 - [Script para el reprocesamiento y filtrado de la lista de eventos de observaciones de XMM-Newton](tools/xmmpipeline.sh).
 - [Script para la obtención de curvas de luz y espectros a partir de las observaciones de XMM-Newton](tools/xmmproducts.sh).
+
+## Fuentes de Rayos X
+
+- [RT Cru](srcs/rtcru/rtcru.md).
