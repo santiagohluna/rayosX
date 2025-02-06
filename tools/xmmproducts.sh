@@ -37,28 +37,30 @@ if [ "${#params[@]}" -gt 7 ]; then
     echo -e "\nAdvertencia: el archivo de parámetros tiene más de 7 argumentos.\nLos argumentos extras serán ignorados."
 fi
 
-continuar=true
+while true; do
+    echo
+    read -p "¿Desea agregar o modificar el valor de algún parámetro? [(s)í/(n)o] " -e op
+    case $op in
+        [Ss]* ) 
+            echo
+            read -p "Ingrese el índice del parámetro a modificar: " -e i
+            echo
+            read -p "Ingrese el valor: " -e val
+            params[$i]=$val
 
-while [ continuar ]; do
-    read -p "\n¿Desea agegar o modificar el valor de algún parámetro? [(s)í/(n)o] " -e op
-    if [ op="s" ]; then
-        read -p "Ingrese el índice del parámetro a modificar: " -e i
-        read -p "Ingrese el valor: " -e val
-        params[$i] = val
-
-        echo -e "\nLos parámetros ingresados son ahora:\n"
-        i=0
-        for i in "${!params[@]}"; do
-            echo "Parámetro $i: '${params[$i]}'."
-        done
-    elif [ op="n" ]; then
-        continuar=false
-    else
-        echo -e "\nDebe ingresar 's' o 'n'."
-    fi
+            echo -e "\nLos parámetros ingresados son ahora:\n"
+            i=0
+            for i in "${!params[@]}"; do
+                echo "Parámetro $i: '${params[$i]}'."
+            done
+        ;;
+        [Nn]* ) break;;
+        * ) echo -e "\nDebe ingresar 's' o 'n'.";;
+    esac
 done
 
-read -p "\nIngrese el nombre del directorio donde se van a almacenar los productos: " -e outdir
+echo
+read -p "Ingrese el nombre del directorio donde se van a almacenar los productos: " -e outdir
 
 # Crear el directorio de salida si no existe.
 if [ -d $outdir ]; then
