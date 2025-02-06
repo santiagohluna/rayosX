@@ -79,7 +79,8 @@ echo $odfdir
 
 export SAS_ODF=${odfdir}
 
-read -p "\nIngrese el camino hacia el directorio donde se almacenan los resultados de la reducción: " -e indir 
+echo
+read -p "Ingrese el camino hacia el directorio donde se almacenan los resultados de la reducción: " -e indir 
 
 pathin="../${indir}"
 
