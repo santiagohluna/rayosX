@@ -57,7 +57,7 @@ while [[ $op -ne 3 ]]; do
             echo -e "\n¡Listo!"
             cd ../../../
         fi
-        echo -e "\nDescarga completa.\n"
+        echo -e "\nDescarga completa."
     elif [[ $op -eq 3 ]]; then
         break
     else
