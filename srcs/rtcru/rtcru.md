@@ -2,7 +2,7 @@
 
 ## Información general
 
-Estrella simbiótica ([Simbad](https://simbad.cds.unistra.fr/simbad/sim-basic?Ident=rt+cru){:target="_blank"}).
+Estrella simbiótica <a href="https://simbad.cds.unistra.fr/simbad/sim-basic?Ident=rt+cru"·target="_blank"> Simbad</a>.
 
 ## Observaciones
 
