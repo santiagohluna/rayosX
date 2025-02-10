@@ -12,3 +12,4 @@ bgPN.reg
 bgM1.reg
 # Región correspondiente al background en EPIC-MOS2
 bgM2.reg
+
