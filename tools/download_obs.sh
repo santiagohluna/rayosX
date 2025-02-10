@@ -4,23 +4,32 @@
 
 clear
 
+# Ruta esperada
+RUTA_ESPERADA="/home/shluna/Proyectos/rayosX/data/obs"
+
+# Obtener la ruta actual
+RUTA_ACTUAL=$(pwd)
+
+# Comparar rutas
+if [ "$RUTA_ACTUAL" != "$RUTA_ESPERADA" ]; then
+    cd $RUTA_ESPERADA
+    echo "Se cambió el directorio de trabajo a $(pwd)"
+fi
+
 op=0
 
 while [[ $op -ne 3 ]]; do
     echo -e "\n================================"
     echo "Descarga de observaciones crudas"
     echo -e "================================\n"
-    echo -e "Seleccione una de las opciones que se muestra a continuación:\n"
-    echo " "
     echo "1. Descargar observación de NuSTAR"
-    echo "2. Descargar observadción de XMM-Newton"
+    echo "2. Descargar observación de XMM-Newton"
     echo -e "3. Salir\n"
-    read op
+    read -p "Ingrese 1, 2 o 3 para seleccionar la opción deseada: " -e op
+    echo
     
     if [[ $op -eq 1 ]] || [[ $op -eq 2 ]]; then
-        echo "Ingrese el ID de la observación:"
-        echo " "
-        read obsid
+        read -p "Ingrese el ID de la observación: " -e obsid
         echo " "
         if [[ $op -eq 1 ]]; then
             if [ ! -d nustar ]; then
