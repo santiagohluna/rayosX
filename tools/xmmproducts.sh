@@ -1,93 +1,122 @@
 #!/bin/bash
 
-echo '============'
-echo 'XMM Products'
-echo '============'
-echo -e '\nScript para la obtención de curvas de luz y espectros a partir de las observaciones de XMM-Newton'
+printf '\n============' 
+printf '\nXMM Products'
+printf '\n============'
+printf '\n\nScript para la obtención de curvas de luz y espectros a partir de las observaciones de XMM-Newton\n'
 
 if [ "$#" -eq 0 ]
 then
-    echo
-    read -p "Ingrese el ID de la observación: " -e obsid
+    printf "\nIngrese el ID de la observación: "
+    read obsid
 else
     obsid="$1"
 fi
 
+# Cadena para el nombre de la carpeta de salida y log.
+STAMP="obsID_"$obsid"_"$(date +'d%Y%m%d_t%H%M%S')
+
+# Crear archivo de log
+
+LOG_FILE=$STAMP"xmmproducts_log.txt"
+
+printf '\n=======================' >> $LOG_FILE
+printf '\nXMM Products - Log file' >> $LOG_FILE
+printf '\n=======================' >> $LOG_FILE
+
 # 1. En primer lugar, se deben inicializar las variables de entorno SAS_ODF y SAS_CCF:
 
-export SAS_ODF=/home/shluna/Proyectos/rayosX/data/obs/xmm/$obsid/ODF
+export SAS_ODF="$RXPATH/data/obs/xmm/$obsid/ODF"
 
-reduction_path=/home/shluna/Proyectos/rayosX/data/reduction/xmm
+reduction_path="$RXPATH/data/reduction/xmm"
 
 # Buscar los directorios en la carpeta donde se guardan las reducciones y almacenarlos en un array:
 readarray x < <(ls $reduction_path | grep obsID_$obsid)
 
-if [ "$#x[@]}" -gt 1 ]; then
+printf "\nSe encontraron %s directorios con datos de reducción de observaciones correspondientes al ObsID %s:\n\n" "${#x[@]}" "$obsid"
+if [ "${#x[@]}" -gt 1 ]; then
     for i in ${!x[@]}
     do 
-        printf "%s" "Directorio $i: ${x[$i]}"
+        printf "Directorio $i: ${x[$i]}"
         i=$((i+1))
     done
 
-    read -p "Ingrese el índice del directorio donde se almacenan los resultados de la reducción: " -e idir
-    indir=$reduction_path/(printf %s ${x[$idir]})
+    printf "\nIngrese el índice del directorio donde se almacenan los resultados de la reducción: "
+    read idir
+
+    indir=$reduction_path/$(printf %s ${x[$idir]})
 else
-    indir=$reduction_path/(printf %s ${x[0]})
+    indir=$reduction_path/$(printf %s ${x[0]})
 fi
 
-echo -e "\nEl directorio seleccionado es: $indir"
+printf "\nEl directorio seleccionado es: %s" "$indir"
 
 export SAS_CCF=$indir/ccf.cif
 
 # Crear el sub-scripts que ejecuta los comandos para la obtención de la curva de luz y del espectro.
 echo "#!/bin/bash" > products.sh
 
-# while read arg; do
-#     [[ "$arg" =~ ^#.*$ ]] && continue
-#     params[i]=$arg
-#     i=$((i+1))
-# done < "$file"
+readarray regfiles < <(ls $indir/*.reg)
 
-readarray params < <(ls *.reg)
-
-echo -e "\nLos archivos de regiones son:\n"
-i=0
-for i in "${!params[@]}"; do
-    printf "Archivo %s: %s." "$i" "${params[$i]}"
+printf "\nLos archivos de regiones son:\n"
+for i in "${!regfiles[@]}"; do
+    printf "Archivo %s: %s" "$i" "${regfiles[$i]}"
 done
 
-# if [ "${#params[@]}" -lt 7 ]; then
-#     echo -e "\nError: el archivo de parámetros tiene menos de 7 argumentos.\n"
-# fi
+# Asignar los archivos a las variables correspondientes
 
-# if [ "${#params[@]}" -gt 7 ]; then
-#     echo -e "\nAdvertencia: el archivo de parámetros tiene más de 7 argumentos.\nLos argumentos extras serán ignorados."
-# fi
+printf "\nIngrese el índice correspondiente al archivo de región de la fuente para la cámara EPIC-PN: "
+read id
+params[0]=${regfiles[$id]}
+printf "\nIngrese el índice correspondiente al archivo de región de la fuente para la cámara EPIC-MOS1: "
+read id
+params[1]=${regfiles[$id]}
+printf "\nIngrese el índice correspondiente al archivo de región de la fuente para la cámara EPIC-MOS2: "
+read id
+params[2]=${regfiles[$id]}
+printf "\nIngrese el índice correspondiente al archivo de región del background para la cámara EPIC-PN: "
+read id
+params[3]=${regfiles[$id]}
+printf "\nIngrese el índice correspondiente al archivo de región del background para la cámara EPIC-MOS1: "
+read id
+params[4]=${regfiles[$id]}
+printf "\nIngrese el índice correspondiente al archivo de región del background para la cámara EPIC-MOS2: "
+read id
+params[5]=${regfiles[$id]}
+
+printf "\nLos archivos de regiones son ahora:\n"
+printf "\nFuente (cámara EPIC-PN): %s" "${params[0]}"
+printf "\nFuente (cámara EPIC-MOS1): %s" "${params[1]}"
+printf "\nFuente (cámara EPIC-MOS2): %s" "${params[2]}"
+printf "\nBackground (cámara EPIC-PN): %s" "${params[3]}"
+printf "\nBackground (cámara EPIC-MOS1): %s" "${params[4]}"
+printf "\nBackground (cámara EPIC-MOS2): %s" "${params[5]}"
 
 while true; do
-    echo
-    read -p "¿Desea agregar o modificar algunos de los archivos? [(s)í/(n)o] " -e op
+    printf "\n¿Desea modificar algunos de los archivos? [(s)í/(n)o] "
+    read op
     case $op in
         [Ss]* ) 
-            echo
-            read -p "Ingrese el índice del archivo a modificar: " -e i
-            echo
-            read -p "Ingrese el valor: " -e val
-            params[$i]=$val
+            printf "\nIngrese el índice del archivo a modificar: "
+            read i
+            printf "\nLos archivos de regiones encontrados en el directorio %s son:\n" "$indir"
+            for i in "${!regfiles[@]}"; do
+                printf "Archivo %s: %s" "$i" "${regfiles[$i]}"
+            done
+            printf "\nIngrese el indice del archivo a seleccionar: "
+            read val
+            regfiles[$i]=$val
 
             echo -e "\nLos parámetros ingresados son ahora:\n"
             i=0
-            for i in "${!params[@]}"; do
-                printf "Archivo %s: %s." "$i" "${params[$i]}"
+            for i in "${!regfiles[@]}"; do
+                printf "Archivo %s: %s." "$i" "${regfiles[$i]}"
             done
         ;;
         [Nn]* ) break;;
         * ) echo -e "\nDebe ingresar 's' o 'n'.";;
     esac
 done
-
-# Cadena para el nombre de la carpeta de salida y log.
-STAMP="obsID_"$obsid"_"$(date +'d%d%m%Y_t%H%M%S')
 
 # Crear la carpeta donde se van a almacenar los archivos que resultan de la reducción.
 
@@ -99,31 +128,31 @@ if [ -d $outdir ]; then
     rm -r $outdir
 fi
 
-mkdir `echo $outdir`
+mkdir $(echo $outdir)
 
 cd $outdir
 
 # 2. Extraer la curva de luz de la fuente usando la región elegida e incluyendo una selección de eventos de calidad apropiada para la curva de luz y un agrupamiento de, por ejemplo, 5 segundos.
 
-pnsrcreg=${params[1]}
+pnsrcreg=${params[0]}
 
-pnsrc=`cat $indir/$pnsrcreg`
+pnsrc=`cat $pnsrcreg`
 
 expsrcpn="'(FLAG==0) && (PATTERN<=4) && (PI in [300:10000]) && ((X,Y) IN "$pnsrc")'"
 
 echo "evselect table=$indir/PNclean.fits energycolumn=PI expression=$expsrcpn withrateset=yes rateset=PN_src_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes" >> products.sh
 
-m1srcreg=${params[2]}
+m1srcreg=${params[1]}
 
-m1src=`cat $indir/$m1srcreg`
+m1src=`cat $m1srcreg`
 
 exprsrcm1="'(FLAG==0) && (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN "${m1src}")'"
 
 echo "evselect table=$indir/M1clean.fits energycolumn=PI expression=$exprsrcm1 withrateset=yes rateset=$indir/M1_src_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes" >> products.sh
 
-m2srcreg=${params[3]}
+m2srcreg=${params[2]}
 
-m2src=`cat $indir/$m2srcreg`
+m2src=`cat $m2srcreg`
 
 exprsrcm2="'(FLAG==0) && (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN "${m2src}")'"
 
@@ -131,25 +160,25 @@ echo "evselect table=$indir/M2clean.fits energycolumn=PI expression=$exprsrcm2 w
 
 # 3. Extraer la curva de luz del fondo, usando las mismas expresiones que para la fuente:
 
-pnbkgreg=${params[4]}
+pnbkgreg=${params[3]}
 
-pnbkg=`cat $indir/$pnbkgreg`
+pnbkg=`cat $pnbkgreg`
 
 exprbgpn="'(FLAG==0) && (PATTERN<=4) && (PI in [300:10000]) && ((X,Y) IN "${pnbkg}")'"
 
 echo "evselect table=$indir/PNclean.fits energycolumn=PI expression=$exprbgpn withrateset=yes rateset=PN_bkg_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes" >> products.sh
 
-m1bkgreg=${params[5]}
+m1bkgreg=${params[4]}
 
-m1bkg=`cat $indir/$m1bkgreg`
+m1bkg=`cat $m1bkgreg`
 
 exprbgm1="'(FLAG==0) && (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN "${m1bkg}")'"
 
 echo "evselect table=$indir/M1clean.fits energycolumn=PI expression=$exprbgm1 withrateset=yes rateset=M1_bkg_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes" >> products.sh
 
-m2bkgreg=${params[6]}
+m2bkgreg=${params[5]}
 
-m2bkg=`cat $indir/$m2bkgreg`
+m2bkg=`cat $m2bkgreg`
 
 exprbgm2="'(FLAG==0) && (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN "${m2bkg}")'"
 
