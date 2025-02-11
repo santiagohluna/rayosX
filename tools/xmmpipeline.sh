@@ -39,7 +39,7 @@ else
 fi
 
 # Cadena para el nombre de la carpeta de salida y log.
-STAMP="obsID_"$obsid"_"$(date +'d%d%m%Y_t%H%M%S')
+STAMP="obsID_"$obsid"_"$(date +'d%Y%m%d_t%H%M%S')
 
 # Crear la carpeta donde se van a almacenar los archivos que resultan de la reducción.
 
@@ -52,7 +52,7 @@ fi
 cd ${outdir}
 
 # Crear el archivo log
-LOG_FILE=$STAMP"_log.txt"
+LOG_FILE=$STAMP"xmmpipeline_log.txt"
 
 echo '=======================' >> $LOG_FILE
 echo 'XMM Pipeline - Log file' >> $LOG_FILE
