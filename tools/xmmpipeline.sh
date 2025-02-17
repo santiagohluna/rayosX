@@ -12,7 +12,7 @@ unset SAS_CCF
 unset SAS_ODF
 
 # Ruta esperada
-RUTA_ESPERADA="/home/shluna/Proyectos/rayosX/data/reduction"
+RUTA_ESPERADA="/home/shluna/Proyectos/rayosX/data"
 
 # Obtener la ruta actual
 RUTA_ACTUAL=$(pwd)
@@ -88,9 +88,6 @@ COMMANDS=(
     "sasinit"
     #
     # Reprocesamiento de las observaciones
-    #
-    "cifbuild"
-    "odfingest"
     #
     ## Ejecutar tarea emproc
     "emproc"
