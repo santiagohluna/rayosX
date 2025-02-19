@@ -12,12 +12,6 @@ RUTA_ESPERADA="/home/shluna/Proyectos/rayosX/data"
 # Obtener la ruta actual
 RUTA_ACTUAL=$(pwd)
 
-# Verificar que la ubicación sea la correcta.
-if [ "$RUTA_ACTUAL" != "$RUTA_ESPERADA" ]; then
-    cd "$RUTA_ESPERADA"
-    echo "Se cambió el directorio de trabajo a $(pwd)"
-fi
-
 # Se definen algunos arreglos
 nudirs=("auxil" "hk" "event_uf")
 
@@ -34,6 +28,12 @@ while [[ $op -ne 3 ]]; do
     echo -e "3. Salir\n"
     read -p "Ingrese 1, 2 o 3 para seleccionar la opción deseada: " -e op
     echo
+
+    # Verificar que la ubicación sea la correcta.
+    if [ "$RUTA_ACTUAL" != "$RUTA_ESPERADA" ]; then
+        cd "$RUTA_ESPERADA"
+        echo -e "Se cambió el directorio de trabajo a $(pwd)\n"
+    fi
     
     case $op in
         "1" | "2" )
@@ -42,11 +42,12 @@ while [[ $op -ne 3 ]]; do
             opt=$op
             case $opt in
                 "1" ) # NuSTAR
-                    # Crear las carpetas con el ObsID, 'clean' y prods si no existen.
+                    # Crear las carpetas con el ObsID, 'clean' y 'prods' si no existen.
                     mkdir -p nustar/"$obid"
                     cd nustar/"$obsid"
                     echo -e "\nSe cambió al directorio $(pwd)."
                     mkdir -p clean prods
+                    echo -e "\nSe crearon las carpetas 'clean' y 'prods'."
                     LOG_FILE="obsdl_obsID_${obsid}_$(date +'d%Y%m%d_t%H%M%S').log"
                     echo "================" >> "$LOG_FILE"
                     echo "obsdl - Log file" >> "$LOG_FILE"
@@ -57,13 +58,14 @@ while [[ $op -ne 3 ]]; do
                         echo -e "\nEjecutando '$CMD'" | tee -a "$LOG_FILE"
                         eval $CMD || { echo "Error en descarga"; exit 1; }
                     done
+                    echo -e "\nDescarga finalizada."
                     echo -e "\nDescomprimiendo archivos."
                     for dir in "${nudirs[@]}"; do
                         if ls "$dir"/*.gz &>/dev/null; then
                             gzip -d "$dir"/*.gz
                         fi
                     done
-                    echo -e "\nDescarga finalizada."
+                    echo -e "¡Listo!"
                     cd "$RUTA_ACTUAL"
                     ;;
                 "2" ) # XMM-Newton
@@ -72,32 +74,40 @@ while [[ $op -ne 3 ]]; do
                     cd xmm/"$obsid"
                     echo -e "\nSe cambió al directorio $(pwd)."
                     mkdir -p clean prods
+                    echo -e "\nSe crearon las carpetas 'clean' y prods'."
                     LOG_FILE="obsdl_obsID_${obsid}_$(date +'d%Y%m%d_t%H%M%S').log"
                     echo "================" >> "$LOG_FILE"
                     echo "obsdl - Log file" >> "$LOG_FILE"
                     echo "================" >> "$LOG_FILE"
                     printf "\nComandos ejecutados\n===================\n" >> "$LOG_FILE"
                     eval "wget -nH --no-check-certificate --cut-dirs=6 -r -w1 -l0 -c -N -np -R 'index*' -erobots=off \"https://heasarc.gsfc.nasa.gov/FTP/xmm/data/rev0//${obsid}/ODF/\""
-                    echo -e "\nDescomprimiendo los ODF"
-                    if ls ODF/*.gz &>/dev/null; then
-                        gzip -d ODF/*.gz
-                    fi
-                    # Preparar las observaciones para reducir y luego analizar.
+                    echo -e "\nDescarga finalizada."
                     cd ODF
-                    export SAS_ODF="."
+                    echo -e "\nDescomprimiendo los ODF."
+                    if ls *.gz &>/dev/null; then
+                        gzip -d *.gz
+                    fi
+                    echo -e "¡Listo!"
+                    # Preparar las observaciones para reducir y luego analizar.
+                    echo -e "\nReprocesando las observaciones."
+                    export SAS_ODF="$RUTA_ESPERADA/xmm/$obsid/ODF"
+                    echo -e "\nApuntar la variable de entorne SAS_ODF a la carpeta donde se encuentran las observaciones recién descargadas: SAS_CCF=$SAS_CCF" | tee -a "../$LOG_FILE"
                     echo -e "\nSe cambió al directorio $(pwd)."
                     echo -e "\nIniciando HEASoft." | tee -a "../$LOG_FILE"
                     eval "heainit"
                     echo -e "\nIniciando SAS." | tee -a "../$LOG_FILE"
                     eval "sasinit" >> "../$LOG_FILE" 2>&1
-                    echo -e "\nEjecutando: cifbuild" | tee -a "../$LOG_FILE"
-                    eval "cifbuild" >> "../$LOG_FILE" 2>&1
-                    export SAS_CCF="ccf.cif"
-                    echo -e "\nArchivo SAS_CCF configurado: $SAS_CCF" | tee -a "../$LOG_FILE"
-                    echo -e "\nEjecutando: odfingest" | tee -a "../$LOG_FILE"
-                    eval "odfingest" >> "../$LOG_FILE" 2>&1
-                    cd ..
-                    echo -e "\nDescarga finalizada."
+                    echo -e "\nEjecutando cifbuild." | tee -a "../$LOG_FILE"
+                    cifbuild >> "../$LOG_FILE" 2>&1
+                    export SAS_CCF="$RUTA_ESPERADA/xmm/$obsid/ODF/ccf.cif"
+                    echo -e "\nApuntar la variable de entorne SAS_CCF al archivo 'ccf.cif' recién creado: SAS_CCF=$SAS_CCF" | tee -a "../$LOG_FILE"
+                    echo -e "\nEjecutando odfingest." | tee -a "../$LOG_FILE"
+                    odfingest >> "../$LOG_FILE" 2>&1
+                    echo -e "\nEjecutando emproc." | tee -a "../$LOG_FILE"
+                    emproc >> "../$LOG_FILE" 2>&1
+                    echo -e "\nEjecutando epproc." | tee -a "../$LOG_FILE"
+                    epproc >> "../$LOG_FILE" 2>&1
+                    echo -e "\nReprocesamiento finalizado."
                     cd "$RUTA_ACTUAL"
                     ;;
             esac
