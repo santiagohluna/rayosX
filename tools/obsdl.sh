@@ -38,16 +38,12 @@ while [[ $op -ne 3 ]]; do
     case $op in
         "1" | "2" )
             read -p "Ingrese el ID de la observación: " -e obsid
-            echo
             opt=$op
             case $opt in
                 "1" ) # NuSTAR
-                    # Crear las carpetas con el ObsID, 'clean' y 'prods' si no existen.
-                    mkdir -p nustar/"$obid"
-                    cd nustar/"$obsid"
+                    # Crear la carpeta con el ObsID y cambiar el directorio de trabajo hacia ella.
+                    mkdir -p nustar/"$obsid" && cd $_
                     echo -e "\nSe cambió al directorio $(pwd)."
-                    mkdir -p clean prods
-                    echo -e "\nSe crearon las carpetas 'clean' y 'prods'."
                     LOG_FILE="obsdl_obsID_${obsid}_$(date +'d%Y%m%d_t%H%M%S').log"
                     echo "================" >> "$LOG_FILE"
                     echo "obsdl - Log file" >> "$LOG_FILE"
@@ -56,58 +52,59 @@ while [[ $op -ne 3 ]]; do
                     for dir in "${nudirs[@]}"; do
                         CMD="wget -nH --no-check-certificate --cut-dirs=8 -r -w1 -l0 -c -N -np -R 'index*' -erobots=off \"https://heasarc.gsfc.nasa.gov/FTP/nustar/data/obs//${obsid:1:2}/${obsid:0:1}/${obsid}/$dir/\""
                         echo -e "\nEjecutando '$CMD'" | tee -a "$LOG_FILE"
-                        eval $CMD || { echo "Error en descarga"; exit 1; }
+                        echo
+                        eval $CMD || { echo "Error en descarga"; }
                     done
-                    echo -e "\nDescarga finalizada."
-                    echo -e "\nDescomprimiendo archivos."
+                    echo -e "\nDescarga finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]." | tee -a "$LOG_FILE"
+                    echo -e "\nDescomprimiendo archivos recién descargados." | tee -a "$LOG_FILE"
                     for dir in "${nudirs[@]}"; do
                         if ls "$dir"/*.gz &>/dev/null; then
                             gzip -d "$dir"/*.gz
                         fi
                     done
-                    echo -e "¡Listo!"
+                    echo -e "\nEjecución finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]." | tee -a "$LOG_FILE"
+                    echo -e "\nVer $LOG_FILE para detalles.\n"
                     cd "$RUTA_ACTUAL"
                     ;;
                 "2" ) # XMM-Newton
-                    # Crear las carpetas con el ObsID, 'clean' y prods si no existen.
-                    mkdir -p xmm/"$obsid"
-                    cd xmm/"$obsid"
+                    # Crear la carpeta con el ObsID y cambiar el directorio de trabajo a ella.
+                    mkdir -p xmm/"$obsid" && cd $_
                     echo -e "\nSe cambió al directorio $(pwd)."
-                    mkdir -p clean prods
-                    echo -e "\nSe crearon las carpetas 'clean' y prods'."
                     LOG_FILE="obsdl_obsID_${obsid}_$(date +'d%Y%m%d_t%H%M%S').log"
                     echo "================" >> "$LOG_FILE"
                     echo "obsdl - Log file" >> "$LOG_FILE"
                     echo "================" >> "$LOG_FILE"
                     printf "\nComandos ejecutados\n===================\n" >> "$LOG_FILE"
-                    eval "wget -nH --no-check-certificate --cut-dirs=6 -r -w1 -l0 -c -N -np -R 'index*' -erobots=off \"https://heasarc.gsfc.nasa.gov/FTP/xmm/data/rev0//${obsid}/ODF/\""
-                    echo -e "\nDescarga finalizada."
+                    CMD="wget -nH --no-check-certificate --cut-dirs=6 -r -w1 -l0 -c -N -np -R 'index*' -erobots=off \"https://heasarc.gsfc.nasa.gov/FTP/xmm/data/rev0//${obsid}/ODF/\""
+                    echo -e "\nEjecutando '$CMD'" | tee -a "$LOG_FILE"
+                    echo
+                    eval $CMD
+                    echo -e "\nDescarga finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]." | tee -a "$LOG_FILE"
                     cd ODF
                     echo -e "\nDescomprimiendo los ODF."
                     if ls *.gz &>/dev/null; then
                         gzip -d *.gz
                     fi
-                    echo -e "¡Listo!"
+                    echo -e "\n¡Listo!"
                     # Preparar las observaciones para reducir y luego analizar.
-                    echo -e "\nReprocesando las observaciones."
+                    echo -e "\nPreparando las observaciones para su reducción y análisis."
                     export SAS_ODF="$RUTA_ESPERADA/xmm/$obsid/ODF"
-                    echo -e "\nApuntar la variable de entorne SAS_ODF a la carpeta donde se encuentran las observaciones recién descargadas: SAS_CCF=$SAS_CCF" | tee -a "../$LOG_FILE"
+                    echo -e "\nApuntar la variable de entorno SAS_ODF a la carpeta donde se encuentran las observaciones recién descargadas: SAS_ODF=$SAS_ODF" | tee -a "../$LOG_FILE"
                     echo -e "\nSe cambió al directorio $(pwd)."
                     echo -e "\nIniciando HEASoft." | tee -a "../$LOG_FILE"
                     eval "heainit"
                     echo -e "\nIniciando SAS." | tee -a "../$LOG_FILE"
                     eval "sasinit" >> "../$LOG_FILE" 2>&1
                     echo -e "\nEjecutando cifbuild." | tee -a "../$LOG_FILE"
+                    echo >> "../$LOG_FILE" 2>&1
                     cifbuild >> "../$LOG_FILE" 2>&1
                     export SAS_CCF="$RUTA_ESPERADA/xmm/$obsid/ODF/ccf.cif"
-                    echo -e "\nApuntar la variable de entorne SAS_CCF al archivo 'ccf.cif' recién creado: SAS_CCF=$SAS_CCF" | tee -a "../$LOG_FILE"
+                    echo -e "\nApuntar la variable de entorno SAS_CCF al archivo 'ccf.cif' recién creado: SAS_CCF=$SAS_CCF" | tee -a "../$LOG_FILE"
                     echo -e "\nEjecutando odfingest." | tee -a "../$LOG_FILE"
+                    echo >> "../$LOG_FILE" 2>&1
                     odfingest >> "../$LOG_FILE" 2>&1
-                    echo -e "\nEjecutando emproc." | tee -a "../$LOG_FILE"
-                    emproc >> "../$LOG_FILE" 2>&1
-                    echo -e "\nEjecutando epproc." | tee -a "../$LOG_FILE"
-                    epproc >> "../$LOG_FILE" 2>&1
-                    echo -e "\nReprocesamiento finalizado."
+                    echo -e "\nEjecución finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]." | tee -a "../$LOG_FILE"
+                    echo -e "\nVer $LOG_FILE para detalles.\n"
                     cd "$RUTA_ACTUAL"
                     ;;
             esac

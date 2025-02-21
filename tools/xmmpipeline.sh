@@ -25,8 +25,6 @@ if [ "$RUTA_ACTUAL" != "$RUTA_ESPERADA" ]; then
     echo -e "\nSe cambió el directorio de trabajo a $(pwd)"
 fi
 
-## Reprocesamiento de las observaciones
-
 # Verificar si hay observaciones para procesar.
 readarray obs < <(ls)
 if [ "${#obs[@]}" -eq 0 ]; then
@@ -49,19 +47,41 @@ else
     obsid=$1
 fi
 
+# Apuntar la variable de entorne SAS_CCF al archivo 'ccf.cif'.
+export SAS_CCF="$RUTA_ESPERADA/xmm/$obsid/ODF/ccf.cif"
+echo -e "\nVariable de entorno SAS_CCF configurada: $SAS_CCF" | tee -a "../$LOG_FILE"
+
 # Almacenar la ruta hacia los archivos con las observaciones a procesar.
 indir=/home/shluna/Proyectos/rayosX/data/xmm/$obsid/ODF
 
-# Apuntar la variable `SAS_ODF` a la carpeta donde se encuentran las observaciones
-export SAS_ODF=${indir}
+# Buscar el archivo SUM.SAS
+SAS_ODF=$(find -type f -name "*SUM.SAS")
 
-echo -e "\nVariable SAS_ODF: ${SAS_ODF}."
+# Verificar si se encontró el archivo
+if [ -z "$SAS_ODF" ]; then
+    echo -e "\nNo se encontró el archivo de resumen." | tee -a "$LOG_FILE"
+    read -p "Ingrese la ruta al archivo de resummen: " -e SAS_ODF
+fi
+
+# Exportar la variable SAS_ODF
+echo -e "\nArchivo de resumen encontrado: $SAS_ODF" | tee -a "$LOG_FILE"
+
+# Apuntar la variable SAS_ODF al archivo de resumen generado por odfingest.
+export SAS_ODF="${outdir}/$SAS_ODF"
+echo -e "\Variable de entorno SAS_ODF configurada: $SAS_ODF" | tee -a "$LOG_FILE"
+echo -e"\n----------------------" >> "$LOG_FILE"
 
 # Cadena para el nombre del log.
-STAMP="obsID_"$obsid"_"$(date +'d%Y%m%d_t%H%M%S')
+STAMP=$obsid"_"$(date +'d%Y%m%d_t%H%M%S')
+
+# Carpeta donde se van a guardar los productos del pipeline.
+outdir="PPO_"$STAMP
+mkdir -p $RUTA_ESPERADA/$obsid/$outdir
+cd $RUTA_ESPERADA/$obsid/$outdir
+echo -e "\nSe cambió el directorio de trabajo a $(pwd)"
 
 # Crear el archivo log
-LOG_FILE=$STAMP"_xmmpipeline_log.txt"
+LOG_FILE=$STAMP"_xmmpipeline.log"
 
 # Lista de comandos a ejecutar
 COMMANDS=(
@@ -69,6 +89,11 @@ COMMANDS=(
     "heainit"
     # Iniciar SAS
     "sasinit"
+    #
+    # Reprocesamiento de los ODF
+    #
+    "epproc"
+    "emproc"
     #
     # Filtrado de la lista de eventos.
     #
@@ -107,22 +132,6 @@ done
 echo -e "\n================================" >> "$LOG_FILE"
 echo -e "Log de ejecución de los comandos" >> "$LOG_FILE"
 echo -e "==================================\n" >> "$LOG_FILE"
-
-# Buscar el archivo SUM.SAS
-SAS_ODF=$(find . -maxdepth 1 -type f -name "*SUM.SAS" | head -n 1)
-
-# Verificar si se encontró el archivo
-if [ -z "$SAS_ODF" ]; then
-    echo -e "\nNo se encontró el archivo de resumen." | tee -a "$LOG_FILE"
-fi
-
-# Exportar la variable SAS_ODF
-echo -e "\nArchivo de resumen encontrado: $SAS_ODF" | tee -a "$LOG_FILE"
-
-# Apuntar la variable SAS_ODF al archivo de resumen generado por odfingest.
-export SAS_ODF="${outdir}/$SAS_ODF"
-echo -e "\nArchivo SAS_ODF configurado: $SAS_ODF" | tee -a "$LOG_FILE"
-echo -e"\n----------------------" >> "$LOG_FILE"
 
 # Ejecutar los comandos definidos en el arreglo "COMMANDS".
 for CMD in "${COMMANDS[@]}"; do
