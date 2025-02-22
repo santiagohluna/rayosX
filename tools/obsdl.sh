@@ -109,6 +109,7 @@ while [[ $op -ne 3 ]]; do
             esac
             ;;
         "3" )
+            cd "$RUTA_ACTUAL"
             break
             ;;
         * )
