@@ -28,15 +28,14 @@ while [[ $op -ne 3 ]]; do
     echo -e "3. Salir\n"
     read -p "Ingrese 1, 2 o 3 para seleccionar la opción deseada: " -e op
     echo
-
-    # Verificar que la ubicación sea la correcta.
-    if [ "$RUTA_ACTUAL" != "$RUTA_ESPERADA" ]; then
-        cd "$RUTA_ESPERADA"
-        echo -e "Se cambió el directorio de trabajo a $(pwd)\n"
-    fi
     
     case $op in
         "1" | "2" )
+            # Verificar que la ubicación sea la correcta.
+            if [ "$RUTA_ACTUAL" != "$RUTA_ESPERADA" ]; then
+                cd "$RUTA_ESPERADA"
+                echo -e "Se cambió el directorio de trabajo a $(pwd)\n"
+            fi
             read -p "Ingrese el ID de la observación: " -e obsid
             opt=$op
             case $opt in
