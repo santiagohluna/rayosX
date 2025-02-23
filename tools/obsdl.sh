@@ -87,6 +87,9 @@ while [[ $op -ne 3 ]]; do
                     echo -e "\n¡Listo!"
                     # Preparar las observaciones para reducir y luego analizar.
                     echo -e "\nPreparando las observaciones para su reducción y análisis."
+                    # Resetear las variables de entorno SAS_CCF y SAS_ODF.
+                    unset SAS_CCF
+                    unset SAS_ODF
                     export SAS_ODF="$RUTA_ESPERADA/xmm/$obsid/ODF"
                     echo -e "\nApuntar la variable de entorno SAS_ODF a la carpeta donde se encuentran las observaciones recién descargadas: SAS_ODF=$SAS_ODF" | tee -a "../$LOG_FILE"
                     echo -e "\nSe cambió al directorio $(pwd)."
