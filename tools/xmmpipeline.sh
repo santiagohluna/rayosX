@@ -29,7 +29,6 @@ fi
 readarray obs < <(ls)
 if [ "${#obs[@]}" -eq 0 ]; then
     printf "¡Advertencia!: No existen observaciones a procesar. Debe descargarlas primero."
-    exit 1
 fi
 
 if [ "$#" -eq 0 ]
@@ -47,9 +46,17 @@ else
     obsid=$1
 fi
 
+echo "=======================" >> "$LOG_FILE"
+echo "XMM Pipeline - Log file" >> "$LOG_FILE"
+echo "=======================" >> "$LOG_FILE"
+
+printf "\nComandos ejecutados" >> "$LOG_FILE"
+printf "\n===================\n" >> "$LOG_FILE"
+
 # Apuntar la variable de entorne SAS_CCF al archivo 'ccf.cif'.
 export SAS_CCF="$RUTA_ESPERADA/xmm/$obsid/ODF/ccf.cif"
 echo -e "\nVariable de entorno SAS_CCF configurada: $SAS_CCF" | tee -a "../$LOG_FILE"
+echo -e "\n----------------------" >> "$LOG_FILE"
 
 # Almacenar la ruta hacia los archivos con las observaciones a procesar.
 indir=/home/shluna/Proyectos/rayosX/data/xmm/$obsid/ODF
@@ -68,8 +75,8 @@ echo -e "\nArchivo de resumen encontrado: $SAS_ODF" | tee -a "$LOG_FILE"
 
 # Apuntar la variable SAS_ODF al archivo de resumen generado por odfingest.
 export SAS_ODF="${outdir}/$SAS_ODF"
-echo -e "\Variable de entorno SAS_ODF configurada: $SAS_ODF" | tee -a "$LOG_FILE"
-echo -e"\n----------------------" >> "$LOG_FILE"
+echo -e "\nVariable de entorno SAS_ODF configurada: $SAS_ODF" | tee -a "$LOG_FILE"
+echo -e "\n----------------------" >> "$LOG_FILE"
 
 # Cadena para el nombre del log.
 STAMP=$obsid"_"$(date +'d%Y%m%d_t%H%M%S')
@@ -115,13 +122,6 @@ COMMANDS=(
     "evselect table=M1.fits withfilteredset=Y filteredset=M1clean.fits destruct=Y keepfilteroutput=T expression='#XMMEA_EM && gti(M1gti.fits,TIME) && (PI>150)'"
     "evselect table=M2.fits withfilteredset=Y filteredset=M2clean.fits destruct=Y keepfilteroutput=T expression='#XMMEA_EM && gti(M2gti.fits,TIME) && (PI>150)'"
 )
-
-echo "=======================" >> "$LOG_FILE"
-echo "XMM Pipeline - Log file" >> "$LOG_FILE"
-echo "=======================" >> "$LOG_FILE"
-
-printf "\nComandos ejecutados" >> "$LOG_FILE"
-printf "\n===================\n" >> "$LOG_FILE"
 
 for CMD in "${COMMANDS[@]}"; do
     echo "- $CMD" >> "$LOG_FILE"
