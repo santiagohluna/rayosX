@@ -5,6 +5,24 @@ printf '\nXMM Products'
 printf '\n============'
 printf '\n\nScript para la obtención de curvas de luz y espectros a partir de las observaciones de XMM-Newton\n'
 
+# Resetear las variables de entorno necesarias.
+unset SAS_CCF
+unset SAS_ODF
+
+# Ruta esperada
+RUTA_ESPERADA="/home/shluna/Proyectos/rayosX/data/xmm"
+
+# Obtener la ruta actual
+RUTA_ACTUAL=$(pwd)
+
+echo -e "\nVerificando si el directorio de trabajo es $RUTA_ESPERADA"
+
+# Comparar rutas
+if [ "$RUTA_ACTUAL" != "$RUTA_ESPERADA" ]; then
+    cd $RUTA_ESPERADA
+    echo -e "\nSe cambió el directorio de trabajo a $(pwd)"
+fi
+
 if [ "$#" -eq 0 ]
 then
     printf "\nIngrese el ID de la observación: "
@@ -14,11 +32,11 @@ else
 fi
 
 # Cadena para el nombre de la carpeta de salida y log.
-STAMP="obsID_"$obsid"_"$(date +'d%Y%m%d_t%H%M%S')
+STAMP=$(date +'d%Y%m%d_t%H%M%S')
 
 # Crear archivo de log
 
-LOG_FILE=$STAMP"xmmproducts_log.txt"
+LOG_FILE="xmmproducts_"$STAMP".log"
 
 printf '\n=======================' >> $LOG_FILE
 printf '\nXMM Products - Log file' >> $LOG_FILE
