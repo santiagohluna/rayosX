@@ -47,7 +47,7 @@ else
 fi
 
 # Cadena para el nombre del log.
-STAMP=$obsid"_"$(date +'d%Y%m%d_t%H%M%S')
+STAMP=$(date +'d%Y%m%d_t%H%M%S')
 
 # Carpeta donde se van a guardar los productos del pipeline.
 outdir="PPO_"$STAMP
@@ -56,7 +56,7 @@ cd $RUTA_ESPERADA/$obsid/$outdir
 echo -e "\nSe cambió el directorio de trabajo a $(pwd)"
 
 # Crear el archivo log
-LOG_FILE=$STAMP"_xmmpipeline.log"
+LOG_FILE="xmmpipeline_"$STAMP".log"
 
 # Escribir el header del log.
 echo "=======================" >> "$LOG_FILE"
