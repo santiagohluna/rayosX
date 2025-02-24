@@ -46,38 +46,6 @@ else
     obsid=$1
 fi
 
-echo "=======================" >> "$LOG_FILE"
-echo "XMM Pipeline - Log file" >> "$LOG_FILE"
-echo "=======================" >> "$LOG_FILE"
-
-printf "\nComandos ejecutados" >> "$LOG_FILE"
-printf "\n===================\n" >> "$LOG_FILE"
-
-# Apuntar la variable de entorne SAS_CCF al archivo 'ccf.cif'.
-export SAS_CCF="$RUTA_ESPERADA/xmm/$obsid/ODF/ccf.cif"
-echo -e "\nVariable de entorno SAS_CCF configurada: $SAS_CCF" | tee -a "../$LOG_FILE"
-echo -e "\n----------------------" >> "$LOG_FILE"
-
-# Almacenar la ruta hacia los archivos con las observaciones a procesar.
-indir=/home/shluna/Proyectos/rayosX/data/xmm/$obsid/ODF
-
-# Buscar el archivo SUM.SAS
-SAS_ODF=$(find -type f -name "*SUM.SAS")
-
-# Verificar si se encontró el archivo
-if [ -z "$SAS_ODF" ]; then
-    echo -e "\nNo se encontró el archivo de resumen." | tee -a "$LOG_FILE"
-    read -p "Ingrese la ruta al archivo de resummen: " -e SAS_ODF
-fi
-
-# Exportar la variable SAS_ODF
-echo -e "\nArchivo de resumen encontrado: $SAS_ODF" | tee -a "$LOG_FILE"
-
-# Apuntar la variable SAS_ODF al archivo de resumen generado por odfingest.
-export SAS_ODF="${outdir}/$SAS_ODF"
-echo -e "\nVariable de entorno SAS_ODF configurada: $SAS_ODF" | tee -a "$LOG_FILE"
-echo -e "\n----------------------" >> "$LOG_FILE"
-
 # Cadena para el nombre del log.
 STAMP=$obsid"_"$(date +'d%Y%m%d_t%H%M%S')
 
@@ -89,6 +57,26 @@ echo -e "\nSe cambió el directorio de trabajo a $(pwd)"
 
 # Crear el archivo log
 LOG_FILE=$STAMP"_xmmpipeline.log"
+
+# Escribir el header del log.
+echo "=======================" >> "$LOG_FILE"
+echo "XMM Pipeline - Log file" >> "$LOG_FILE"
+echo "=======================" >> "$LOG_FILE"
+
+# Almacenar la ruta hacia los archivos con las observaciones a procesar.
+indir=/home/shluna/Proyectos/rayosX/data/xmm/$obsid/ODF
+
+# Apuntar la variable de entorne SAS_CCF al archivo 'ccf.cif'.
+SAS_CCF=$(find $indir -type f -name "ccf.cif")
+export SAS_CCF=$SAS_CCF
+echo -e "\nVariable de entorno SAS_CCF configurada: $SAS_CCF" | tee -a "$LOG_FILE"
+echo -e "\n----------------------" >> "$LOG_FILE"
+
+# Apuntar la variable SAS_ODF al archivo de resumen generado por odfingest.
+SAS_ODF=$(find $indir -type f -name "*.SAS")
+export SAS_ODF=$SAS_ODF
+echo -e "\nVariable de entorno SAS_ODF configurada: $SAS_ODF" | tee -a "$LOG_FILE"
+echo -e "\n----------------------" >> "$LOG_FILE"
 
 # Lista de comandos a ejecutar
 COMMANDS=(
@@ -104,9 +92,9 @@ COMMANDS=(
     #
     # Filtrado de la lista de eventos.
     #
-    "shopt -s nullglob; for file in ODF/*_*_EPN_*_ImagingEvts.ds; do [ -f "$file" ] && cp "$file" clean/PN.fits >> "$LOG_FILE"; done"
-    "shopt -s nullglob; for file in ODF/*_*_EMOS1_*_ImagingEvts.ds; do [ -f "$file" ] && cp "$file" clean/M1.fits >> "$LOG_FILE"; done"
-    "shopt -s nullglob; for file in ODF/*_*_EMOS2_*_ImagingEvts.ds; do [ -f "$file" ] && cp "$file" clean/M2.fits >> "$LOG_FILE"; done"
+    "find . -type f -name "*_*_EPN_*_ImagingEvts.ds" -exec cp {} PN.fits \;"
+    "find . -type f -name "*_*_EMOS1_*_ImagingEvts.ds" -exec cp {} M1.fits \;"
+    "find . -type f -name "*_*_EMOS2_*_ImagingEvts.ds" -exec cp {} M2.fits \;"
     ## Extraer una curva de luz de eventos singulares (con patrón “0”) a energías por encima de 10 keV para cada cámara (PN, MOS1, MOS2) para identificar los intervalos de alto background, usando la tarea `evselect` de SAS:
     "evselect table=PN.fits withrateset=Y rateset=ratesPN.fits maketimecolumn=Y timebinsize=100 makeratecolumn=Y expression='#XMMEA_EP && (PI>10000&&PI<12000) && (PATTERN==0)'"
     "evselect table=M1.fits withrateset=Y rateset=ratesM1.fits maketimecolumn=Y timebinsize=100 makeratecolumn=Y expression='#XMMEA_EM && (PI>10000) && (PATTERN==0)'"
@@ -131,11 +119,12 @@ done
 
 echo -e "\n================================" >> "$LOG_FILE"
 echo -e "Log de ejecución de los comandos" >> "$LOG_FILE"
-echo -e "==================================\n" >> "$LOG_FILE"
+echo -e "================================" >> "$LOG_FILE"
 
 # Ejecutar los comandos definidos en el arreglo "COMMANDS".
 for CMD in "${COMMANDS[@]}"; do
     echo -e "\nEjecutando: $CMD" | tee -a "$LOG_FILE"
+    echo >> "$LOG_FILE" 2>&1
     eval "$CMD" >> "$LOG_FILE" 2>&1
     echo -e "\n----------------------" >> "$LOG_FILE"
 done
