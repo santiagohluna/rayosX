@@ -23,19 +23,30 @@ if [ "$RUTA_ACTUAL" != "$RUTA_ESPERADA" ]; then
     echo -e "\nSe cambió el directorio de trabajo a $(pwd)"
 fi
 
+readarray obs < <(ls)
+if [ "${#obs[@]}" -eq 0 ]; then
+    printf "¡Advertencia!: No existen observaciones a procesar. Debe descargarlas primero."
+fi
+
 if [ "$#" -eq 0 ]
 then
-    printf "\nIngrese el ID de la observación: "
-    read obsid
+    printf "\nLista de observaciones posibles a procesar:\n\n"
+    for i in ${!obs[@]}
+    do 
+        printf "$((i+1)). ObsID: %s" "${obs[$i]}"
+        i=$((i+1))
+    done
+    printf "\nIngrese el índice identificador de la observación: "
+    read -e id
+    obsid=$(printf %s "${obs[$((id-1))]}")
 else
-    obsid="$1"
+    obsid=$1
 fi
 
 # Cadena para el nombre de la carpeta de salida y log.
 STAMP=$(date +'d%Y%m%d_t%H%M%S')
 
 # Crear archivo de log
-
 LOG_FILE="xmmproducts_"$STAMP".log"
 
 printf '\n=======================' >> $LOG_FILE
@@ -44,12 +55,25 @@ printf '\n=======================' >> $LOG_FILE
 
 # 1. En primer lugar, se deben inicializar las variables de entorno SAS_ODF y SAS_CCF:
 
-export SAS_ODF="$RXPATH/data/obs/xmm/$obsid/ODF"
+# Almacenar la ruta hacia los archivos con las observaciones a procesar.
+indir=/home/shluna/Proyectos/rayosX/data/xmm/$obsid/ODF
 
-reduction_path="$RXPATH/data/reduction/xmm"
+# Apuntar la variable de entorne SAS_CCF al archivo 'ccf.cif'.
+SAS_CCF=$(find $indir -type f -name "ccf.cif")
+export SAS_CCF=$SAS_CCF
+echo -e "\nVariable de entorno SAS_CCF configurada: $SAS_CCF" | tee -a "$LOG_FILE"
+echo -e "\n----------------------" >> "$LOG_FILE"
+
+# Apuntar la variable SAS_ODF al archivo de resumen generado por odfingest.
+SAS_ODF=$(find $indir -type f -name "*.SAS")
+export SAS_ODF=$SAS_ODF
+echo -e "\nVariable de entorno SAS_ODF configurada: $SAS_ODF" | tee -a "$LOG_FILE"
+echo -e "\n----------------------" >> "$LOG_FILE"
+
+reduction_path=/home/shluna/Proyectos/rayosX/data/xmm/$obsid
 
 # Buscar los directorios en la carpeta donde se guardan las reducciones y almacenarlos en un array:
-readarray x < <(ls $reduction_path | grep obsID_$obsid)
+readarray x < <(find $reduction_path -type d -name "PPO_*")
 
 printf "\nSe encontraron %s directorios con datos de reducción de observaciones correspondientes al ObsID %s:\n\n" "${#x[@]}" "$obsid"
 if [ "${#x[@]}" -gt 1 ]; then
@@ -68,11 +92,6 @@ else
 fi
 
 printf "\nEl directorio seleccionado es: %s" "$indir"
-
-export SAS_CCF=$indir/ccf.cif
-
-# Crear el sub-scripts que ejecuta los comandos para la obtención de la curva de luz y del espectro.
-echo "#!/bin/bash" > products.sh
 
 readarray regfiles < <(ls $indir/*.reg)
 
@@ -138,7 +157,7 @@ done
 
 # Crear la carpeta donde se van a almacenar los archivos que resultan de la reducción.
 
-outdir=$STAMP
+outdir="products_$STAMP"
 echo -e "\nLos productos se van a guardar en $outdir"
 
 # Crear el directorio de salida si no existe.
@@ -150,134 +169,74 @@ mkdir $(echo $outdir)
 
 cd $outdir
 
-# 2. Extraer la curva de luz de la fuente usando la región elegida e incluyendo una selección de eventos de calidad apropiada para la curva de luz y un agrupamiento de, por ejemplo, 5 segundos.
+# Arreglo con los comando a ejecutar:
+COMMANDS=(
+    # 2. Extraer la curva de luz de la fuente usando la región elegida e incluyendo una selección de eventos de calidad apropiada para la curva de luz y un agrupamiento de, por ejemplo, 5 segundos.
+    "evselect table=$indir/PNclean.fits energycolumn=PI expression='(FLAG==0) && (PATTERN<=4) && (PI in [300:10000]) && ((X,Y) IN "${params[0]}")' withrateset=yes rateset=PN_src_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes"
+    "evselect table=$indir/M1clean.fits energycolumn=PI expression='(FLAG==0) && (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN "${params[1]}")' withrateset=yes rateset=$indir/M1_src_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes"
+    "evselect table=$indir/M2clean.fits energycolumn=PI expression='(FLAG==0) && (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN "${params[2]}")' withrateset=yes rateset=$indir/M2_src_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes" 
+    # 3. Extraer la curva de luz del fondo, usando las mismas expresiones que para la fuente:
+    "evselect table=$indir/PNclean.fits energycolumn=PI expression='(FLAG==0) && (PATTERN<=4) && (PI in [300:10000]) && ((X,Y) IN "${params[3]}")' withrateset=yes rateset=PN_bkg_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes"
+    "evselect table=$indir/M1clean.fits energycolumn=PI expression='(FLAG==0) && (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN "${params[4]}")' withrateset=yes rateset=M1_bkg_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes"
+    "evselect table=$indir/M2clean.fits energycolumn=PI expression='(FLAG==0) && (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN "${params[5]}")' withrateset=yes rateset=M2_bkg_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes"
+    # 4. Corrección de las curvas de luz.
+    "epiclccorr srctslist=PN_src_raw.lc eventlist=$indir/PNclean.fits outset=PN_lccorr.lc bkgtslist=PN_bkg_raw.lc withbkgset=yes applyabsolutecorrections=yes"
+    "epiclccorr srctslist=$indir/M1_src_raw.lc eventlist=$indir/M1clean.fits outset=M1_lccorr.lc bkgtslist=M1_bkg_raw.lc withbkgset=yes applyabsolutecorrections=yes"
+    "epiclccorr srctslist=$indir/M2_src_raw.lc eventlist=$indir/M2clean.fits outset=M2_lccorr.lc bkgtslist=M2_bkg_raw.lc withbkgset=yes applyabsolutecorrections=yes"
+    #
+    # Obtención de los espectros
+    #
+    # 1. Extraer el espectro de la fuente.
+    "evselect table=$indir/PNclean.fits withspectrumset=yes spectrumset=PN_src_spectrum.fits energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=20479 expression='(FLAG==0) && (PATTERN<=4) && ((X,Y) IN "${params[0]}")'"
+    "evselect table=$indir/M1clean.fits withspectrumset=yes spectrumset=M1_src_spectrum.fits energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=11999 expression='(FLAG==0) && (PATTERN<=12) && ((X,Y) IN "${params[1]}")'"
+    "evselect table=$indir/M2clean.fits withspectrumset=yes spectrumset=M2_src_spectrum.fits energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=11999 expression='(FLAG==0) && (PATTERN<=12) && ((X,Y) IN "${params[2]}")'"
+    # 2. Extraer el espectro del fondo:
+    "evselect table=$indir/PNclean.fits withspectrumset=yes spectrumset=PN_src_bkg_spectrum.pha energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=20479 expression='(FLAG==0) && (PATTERN<=4) && ((X,Y) IN "${params[3]}")'"
+    "evselect table=$indir/M1clean.fits withspectrumset=yes spectrumset=M1_src_bkg_spectrum.pha energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=11999 expression='(FLAG==0) && (PATTERN<=12) && ((X,Y) IN "${params[4]}")'"
+    "evselect table=$indir/M2clean.fits withspectrumset=yes spectrumset=M2_src_bkg_spectrum.pha energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=11999 expression='(FLAG==0) && (PATTERN<=12) && ((X,Y) IN "${params[5]}")'"
+    # 3. Calcular el area de las regiones usadas para extraer la fuente y el fondo necesarias para pesar correctamente sus flujos mutuos.
+    ## Para EPIC-pn:
+    "backscale spectrumset=PN_src_spectrum.fits badpixlocation=$indir/PNclean.fits"
+    "backscale spectrumset=PN_src_bkg_spectrum.pha badpixlocation=$indir/PNclean.fits"
+    ## Para EPIC-MOS 1:
+    "backscale spectrumset=M1_src_spectrum.fits badpixlocation=$indir/M1clean.fits"
+    "backscale spectrumset=M1_src_bkg_spectrum.pha badpixlocation=$indir/M1clean.fits"
+    ## Para EPIC-MOS 2:
+    "backscale spectrumset=M2_src_spectrum.fits badpixlocation=$indir/M2clean.fits"
+    "backscale spectrumset=M2_src_bkg_spectrum.pha badpixlocation=$indir/M2clean.fits"
+    # 4. Usar la tarea rmfgen para crear una matriz de redistribución para el espectro extraído (esto puede llevar más de 30 minutos en computadoras pequeñas):
+    "rmfgen spectrumset=PN_src_spectrum.fits rmfset=PN_src.rmf"
+    "rmfgen spectrumset=M1_src_spectrum.fits rmfset=M1_src.rmf"
+    "rmfgen spectrumset=M2_src_spectrum.fits rmfset=M2_src.rmf"
+    # 5. Generar la matriz auxiliar. Para fuentes puntuales usar extendedsource=no detmaptype=psf. Para fuentes extendidas usar extendedsource=yes detmaptype=flat o bien generar un mapa de exposición con la tarea expmap).
+    "arfgen spectrumset=PN_src_spectrum.fits arfset=PN_src.arf withrmfset=yes rmfset=PN_src.rmf badpixlocation=$indir/PNclean.fits extendedsource=no detmaptype=psf"
+    "arfgen spectrumset=M1_src_spectrum.fits arfset=M1_src.arf withrmfset=yes rmfset=M1_src.rmf badpixlocation=$indir/M1clean.fits extendedsource=no detmaptype=psf"
+    "arfgen spectrumset=M2_src_spectrum.fits arfset=M2_src.arf withrmfset=yes rmfset=M2_src.rmf badpixlocation=$indir/M2clean.fits extendedsource=no detmaptype=psf"
+    # 6. Reagrupar el espectro y vincularlo a los archivos asociados tales como el espectro del fondo y las matrices (RMF y ARF). En el ejemplo reagrupamos a un mínimo de 16 cuentas por canal asegurando que el reagrupamiento no exceda un factor 3 en la pérdida de resolución:
+    "specgroup spectrumset=PN_src_spectrum.fits mincounts=16 oversample=3 rmfset=PN_src.rmf arfset=PN_src.arf backgndset=PN_src_bkg_spectrum.pha groupedset=PN_src_grp.pha"
+    "specgroup spectrumset=M1_src_spectrum.fits mincounts=16 oversample=3 rmfset=M1_src.rmf arfset=M1_src.arf backgndset=M1_src_bkg_spectrum.pha groupedset=M1_src_grp.pha"
+    "specgroup spectrumset=M2_src_spectrum.fits mincounts=16 oversample=3 rmfset=M2_src.rmf arfset=M2_src.arf backgndset=M2_src_bkg_spectrum.pha groupedset=M2_src_grp.pha"
+)
 
-pnsrcreg=${params[0]}
+echo -e "\nComandos ejecutados" >> "$LOG_FILE"
+echo -e "===================\n" >> "$LOG_FILE"
 
-pnsrc=`cat $pnsrcreg`
+for CMD in "${COMMANDS[@]}"; do
+    echo "- $CMD" >> "$LOG_FILE"
+done
 
-expsrcpn="'(FLAG==0) && (PATTERN<=4) && (PI in [300:10000]) && ((X,Y) IN "$pnsrc")'"
+# Ejecutar los comandos definidos en el arreglo "COMMANDS".
+for CMD in "${COMMANDS[@]}"; do
+    echo -e "\nEjecutando: $CMD" | tee -a "$LOG_FILE"
+    echo >> "$LOG_FILE" 2>&1
+    eval "$CMD" >> "$LOG_FILE" 2>&1
+    echo -e "\n----------------------" >> "$LOG_FILE"
+done
 
-echo "evselect table=$indir/PNclean.fits energycolumn=PI expression=$expsrcpn withrateset=yes rateset=PN_src_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes" >> products.sh
+echo -e "\n¡Listo!" >> "$LOG_FILE"
 
-m1srcreg=${params[1]}
-
-m1src=`cat $m1srcreg`
-
-exprsrcm1="'(FLAG==0) && (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN "${m1src}")'"
-
-echo "evselect table=$indir/M1clean.fits energycolumn=PI expression=$exprsrcm1 withrateset=yes rateset=$indir/M1_src_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes" >> products.sh
-
-m2srcreg=${params[2]}
-
-m2src=`cat $m2srcreg`
-
-exprsrcm2="'(FLAG==0) && (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN "${m2src}")'"
-
-echo "evselect table=$indir/M2clean.fits energycolumn=PI expression=$exprsrcm2 withrateset=yes rateset=$indir/M2_src_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes" >> products.sh
-
-# 3. Extraer la curva de luz del fondo, usando las mismas expresiones que para la fuente:
-
-pnbkgreg=${params[3]}
-
-pnbkg=`cat $pnbkgreg`
-
-exprbgpn="'(FLAG==0) && (PATTERN<=4) && (PI in [300:10000]) && ((X,Y) IN "${pnbkg}")'"
-
-echo "evselect table=$indir/PNclean.fits energycolumn=PI expression=$exprbgpn withrateset=yes rateset=PN_bkg_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes" >> products.sh
-
-m1bkgreg=${params[4]}
-
-m1bkg=`cat $m1bkgreg`
-
-exprbgm1="'(FLAG==0) && (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN "${m1bkg}")'"
-
-echo "evselect table=$indir/M1clean.fits energycolumn=PI expression=$exprbgm1 withrateset=yes rateset=M1_bkg_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes" >> products.sh
-
-m2bkgreg=${params[5]}
-
-m2bkg=`cat $m2bkgreg`
-
-exprbgm2="'(FLAG==0) && (PATTERN<=12) && (PI in [300:10000]) && ((X,Y) IN "${m2bkg}")'"
-
-echo "evselect table=$indir/M2clean.fits energycolumn=PI expression=$exprbgm2 withrateset=yes rateset=M2_bkg_raw.lc timebinsize=5 maketimecolumn=yes makeratecolumn=yes" >> products.sh
-
-# 4. Corrección de las curvas de luz.
-
-echo "epiclccorr srctslist=PN_src_raw.lc eventlist=$indir/PNclean.fits outset=PN_lccorr.lc bkgtslist=PN_bkg_raw.lc withbkgset=yes applyabsolutecorrections=yes" >> products.sh
-
-echo "epiclccorr srctslist=$indir/M1_src_raw.lc eventlist=$indir/M1clean.fits outset=M1_lccorr.lc bkgtslist=M1_bkg_raw.lc withbkgset=yes applyabsolutecorrections=yes" >> products.sh
-
-echo "epiclccorr srctslist=$indir/M2_src_raw.lc eventlist=$indir/M2clean.fits outset=M2_lccorr.lc bkgtslist=M2_bkg_raw.lc withbkgset=yes applyabsolutecorrections=yes" >> products.sh
-
-# Obtención de los espectros
-
-# 1. Extraer el espectro de la fuente.
-
-exprPNsrc="'(FLAG==0) && (PATTERN<=4) && ((X,Y) IN "${pnsrc}")'"
-
-echo "evselect table=$indir/PNclean.fits withspectrumset=yes spectrumset=PN_src_spectrum.fits energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=20479 expression=$exprPNsrc" >> products.sh
-
-exprM1src="'(FLAG==0) && (PATTERN<=12) && ((X,Y) IN "${m1src}")'"
-
-echo "evselect table=$indir/M1clean.fits withspectrumset=yes spectrumset=M1_src_spectrum.fits energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=11999 expression=$exprM1src" >> products.sh
-
-exprM2src="'(FLAG==0) && (PATTERN<=12) && ((X,Y) IN "${m2src}")'"
-
-echo "evselect table=$indir/M2clean.fits withspectrumset=yes spectrumset=M2_src_spectrum.fits energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=11999 expression=$exprM2src" >> products.sh
-
-# 2. Extraer el espectro del fondo:
-
-exprPNbg="'(FLAG==0) && (PATTERN<=4) && ((X,Y) IN "${pnbkg}")'"
-
-echo "evselect table=$indir/PNclean.fits withspectrumset=yes spectrumset=PN_src_bkg_spectrum.pha energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=20479 expression=$exprPNbg" >> products.sh
-
-exprM1bg="'(FLAG==0) && (PATTERN<=12) && ((X,Y) IN "${m1bkg}")'"
-
-echo "evselect table=$indir/M1clean.fits withspectrumset=yes spectrumset=M1_src_bkg_spectrum.pha energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=11999 expression=$exprM1bg" >> products.sh
-
-exprM2bg="'(FLAG==0) && (PATTERN<=12) && ((X,Y) IN "${m2bkg}")'"
-
-echo "evselect table=$indir/M2clean.fits withspectrumset=yes spectrumset=M2_src_bkg_spectrum.pha energycolumn=PI spectralbinsize=5 withspecranges=yes specchannelmin=0 specchannelmax=11999 expression=$exprM2bg" >> products.sh
-
-# 3. Calcular el area de las regiones usadas para extraer la fuente y el fondo necesarias para pesar correctamente sus flujos mutuos.
-
-# Para EPIC-pn:
-echo "backscale spectrumset=PN_src_spectrum.fits badpixlocation=$indir/PNclean.fits" >> products.sh
-echo "backscale spectrumset=PN_src_bkg_spectrum.pha badpixlocation=$indir/PNclean.fits" >> products.sh
-# Para EPIC-MOS 1:
-echo "backscale spectrumset=M1_src_spectrum.fits badpixlocation=$indir/M1clean.fits" >> products.sh
-echo "backscale spectrumset=M1_src_bkg_spectrum.pha badpixlocation=$indir/M1clean.fits" >> products.sh
-# Para EPIC-MOS 2:
-echo "backscale spectrumset=M2_src_spectrum.fits badpixlocation=$indir/M2clean.fits" >> products.sh
-echo "backscale spectrumset=M2_src_bkg_spectrum.pha badpixlocation=$indir/M2clean.fits" >> products.sh
-
-# 4. Usar la tarea rmfgen para crear una matriz de redistribución para el espectro extraído (esto puede llevar más de 30 minutos en computadoras pequeñas):
-
-echo "rmfgen spectrumset=PN_src_spectrum.fits rmfset=PN_src.rmf" >> products.sh
-echo "rmfgen spectrumset=M1_src_spectrum.fits rmfset=M1_src.rmf" >> products.sh
-echo "rmfgen spectrumset=M2_src_spectrum.fits rmfset=M2_src.rmf" >> products.sh
-
-# 5. Generar la matriz auxiliar. Para fuentes puntuales usar extendedsource=no detmaptype=psf. Para fuentes extendidas usar extendedsource=yes detmaptype=flat o bien generar un mapa de exposición con la tarea expmap).
-
-echo "arfgen spectrumset=PN_src_spectrum.fits arfset=PN_src.arf withrmfset=yes rmfset=PN_src.rmf badpixlocation=$indir/PNclean.fits extendedsource=no detmaptype=psf" >> products.sh
-echo "arfgen spectrumset=M1_src_spectrum.fits arfset=M1_src.arf withrmfset=yes rmfset=M1_src.rmf badpixlocation=$indir/M1clean.fits extendedsource=no detmaptype=psf" >> products.sh
-echo "arfgen spectrumset=M2_src_spectrum.fits arfset=M2_src.arf withrmfset=yes rmfset=M2_src.rmf badpixlocation=$indir/M2clean.fits extendedsource=no detmaptype=psf" >> products.sh
-
-# 6. Reagrupar el espectro y vincularlo a los archivos asociados tales como el espectro del fondo y las matrices (RMF y ARF). En el ejemplo reagrupamos a un mínimo de 16 cuentas por canal asegurando que el reagrupamiento no exceda un factor 3 en la pérdida de resolución:
-
-echo "specgroup spectrumset=PN_src_spectrum.fits mincounts=16 oversample=3 rmfset=PN_src.rmf arfset=PN_src.arf backgndset=PN_src_bkg_spectrum.pha groupedset=PN_src_grp.pha" >> products.sh
-echo "specgroup spectrumset=M1_src_spectrum.fits mincounts=16 oversample=3 rmfset=M1_src.rmf arfset=M1_src.arf backgndset=M1_src_bkg_spectrum.pha groupedset=M1_src_grp.pha" >> products.sh
-echo "specgroup spectrumset=M2_src_spectrum.fits mincounts=16 oversample=3 rmfset=M2_src.rmf arfset=M2_src.arf backgndset=M2_src_bkg_spectrum.pha groupedset=M2_src_grp.pha" >> products.sh
-
-chmod +x products.sh
-
-source ./products.sh
-
-rm products.sh
+echo -e "\nEjecución finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]. Ver $LOG_FILE para detalles.\n" | tee -a "../$LOG_FILE"
 
 rm *.fits
 
-cd ..
-
-echo -e "\n¡Listo!\n"
+cd $RUTA_ESPERADA
