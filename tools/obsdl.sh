@@ -43,10 +43,12 @@ while [[ $op -ne 3 ]]; do
                     # Crear la carpeta con el ObsID y cambiar el directorio de trabajo hacia ella.
                     mkdir -p nustar/"$obsid" && cd $_
                     echo -e "\nSe cambió al directorio $(pwd)."
-                    LOG_FILE="obsdl_obsID_${obsid}_$(date +'d%Y%m%d_t%H%M%S').log"
+                    LOG_FILE="obsdl_$(date +'d%Y%m%d_t%H%M%S').log"
                     echo "================" >> "$LOG_FILE"
                     echo "obsdl - Log file" >> "$LOG_FILE"
                     echo "================" >> "$LOG_FILE"
+                    echo -e "\nObsID: $obsid" >> "$LOG_FILE"
+                    echo -e "\nEjecución iniciada [$(date +'%d/%m/%Y - %H:%M:%S')]." >> "$LOG_FILE"
                     printf "\nComandos ejecutados\n===================\n" >> "$LOG_FILE"
                     for dir in "${nudirs[@]}"; do
                         CMD="wget -nH --no-check-certificate --cut-dirs=8 -r -w1 -l0 -c -N -np -R 'index*' -erobots=off \"https://heasarc.gsfc.nasa.gov/FTP/nustar/data/obs//${obsid:1:2}/${obsid:0:1}/${obsid}/$dir/\""
@@ -62,17 +64,19 @@ while [[ $op -ne 3 ]]; do
                         fi
                     done
                     echo -e "\nEjecución finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]." | tee -a "$LOG_FILE"
-                    echo -e "\nVer $LOG_FILE para detalles.\n"
+                    echo -e "\nVer $LOG_FILE para más detalles.\n"
                     cd "$RUTA_ACTUAL"
                     ;;
                 "2" ) # XMM-Newton
                     # Crear la carpeta con el ObsID y cambiar el directorio de trabajo a ella.
                     mkdir -p xmm/"$obsid" && cd $_
                     echo -e "\nSe cambió al directorio $(pwd)."
-                    LOG_FILE="obsdl_obsID_${obsid}_$(date +'d%Y%m%d_t%H%M%S').log"
+                    LOG_FILE="obsdl_$(date +'d%Y%m%d_t%H%M%S').log"
                     echo "================" >> "$LOG_FILE"
                     echo "obsdl - Log file" >> "$LOG_FILE"
                     echo "================" >> "$LOG_FILE"
+                    echo -e "\nObsID: $obsid" >> "$LOG_FILE"
+                    echo -e "\nEjecución iniciada [$(date +'%d/%m/%Y - %H:%M:%S')]." >> "$LOG_FILE" 
                     printf "\nComandos ejecutados\n===================\n" >> "$LOG_FILE"
                     CMD="wget -nH --no-check-certificate --cut-dirs=6 -r -w1 -l0 -c -N -np -R 'index*' -erobots=off \"https://heasarc.gsfc.nasa.gov/FTP/xmm/data/rev0//${obsid}/ODF/\""
                     echo -e "\nEjecutando '$CMD'" | tee -a "$LOG_FILE"
@@ -106,7 +110,7 @@ while [[ $op -ne 3 ]]; do
                     echo >> "../$LOG_FILE" 2>&1
                     odfingest >> "../$LOG_FILE" 2>&1
                     echo -e "\nEjecución finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]." | tee -a "../$LOG_FILE"
-                    echo -e "\nVer $LOG_FILE para detalles.\n"
+                    echo -e "\nVer $LOG_FILE para más detalles.\n"
                     cd "$RUTA_ACTUAL"
                     ;;
             esac
