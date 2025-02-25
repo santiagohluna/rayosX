@@ -114,6 +114,9 @@ COMMANDS=(
     "evselect table=M2.fits withfilteredset=Y filteredset=M2clean.fits destruct=Y keepfilteroutput=T expression='#XMMEA_EM && gti(M2gti.fits,TIME) && (PI>150)'"
 )
 
+echo -e "\nComandos ejecutados" >> "$LOG_FILE"
+echo -e "===================\n" >> "$LOG_FILE"
+
 for CMD in "${COMMANDS[@]}"; do
     echo "- $CMD" >> "$LOG_FILE"
 done
@@ -134,10 +137,11 @@ done
 
 # Dar la opción al usuario de reprocesar las observaciones.
 while true; do
-    printf "\n¿Desea modificar reprocesar los ODF? [(s)í/(n)o] "
+    printf "\n¿Desea reprocesar los ODF? [(s)í/(n)o] "
     read op
     case $op in
-        [Ss]* ) 
+        [Ss]* )
+            echo -e "\nReprocesando los ODF" | tee -a "$LOG_FILE"
             # Ejecutar los comandos definidos en el arreglo "REPROC".
             for CMD in "${REPROC[@]}"; do
                 echo -e "\nEjecutando: $CMD" | tee -a "$LOG_FILE"
