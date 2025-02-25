@@ -78,17 +78,20 @@ export SAS_ODF=$SAS_ODF
 echo -e "\nVariable de entorno SAS_ODF configurada: $SAS_ODF" | tee -a "$LOG_FILE"
 echo -e "\n----------------------" >> "$LOG_FILE"
 
-# Lista de comandos a ejecutar
-COMMANDS=(
+# Listas de comandos a ejecutar
+INIT=(
     # Iniciar HEASoft
     "heainit"
     # Iniciar SAS
     "sasinit"
-    #
-    # Reprocesamiento de los ODF
-    #
+)
+
+REPROC=(
     "epproc"
     "emproc"
+)
+
+COMMANDS=(
     #
     # Filtrado de la lista de eventos.
     #
@@ -120,6 +123,35 @@ done
 echo -e "\n================================" >> "$LOG_FILE"
 echo -e "Log de ejecución de los comandos" >> "$LOG_FILE"
 echo -e "================================" >> "$LOG_FILE"
+
+# Ejecutar los comandos definidos en el arreglo "INIT".
+for CMD in "${INIT[@]}"; do
+    echo -e "\nEjecutando: $CMD" | tee -a "$LOG_FILE"
+    echo >> "$LOG_FILE" 2>&1
+    eval "$CMD" >> "$LOG_FILE" 2>&1
+    echo -e "\n----------------------" >> "$LOG_FILE"
+done
+
+# Dar la opción al usuario de reprocesar las observaciones.
+while true; do
+    printf "\n¿Desea modificar reprocesar los ODF? [(s)í/(n)o] "
+    read op
+    case $op in
+        [Ss]* ) 
+            # Ejecutar los comandos definidos en el arreglo "REPROC".
+            for CMD in "${REPROC[@]}"; do
+                echo -e "\nEjecutando: $CMD" | tee -a "$LOG_FILE"
+                echo >> "$LOG_FILE" 2>&1
+                eval "$CMD" >> "$LOG_FILE" 2>&1
+                echo -e "\n----------------------" >> "$LOG_FILE"
+            done
+        ;;
+        [Nn]* ) 
+            break
+        ;;
+        * ) echo -e "\nDebe ingresar 's' o 'n'.";;
+    esac
+done
 
 # Ejecutar los comandos definidos en el arreglo "COMMANDS".
 for CMD in "${COMMANDS[@]}"; do
