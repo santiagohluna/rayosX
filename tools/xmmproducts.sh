@@ -43,6 +43,10 @@ else
     obsid=$1
 fi
 
+# Cambiar directorio de trabajo al correspondiente ObsID.
+cd $obsid
+echo -e "\nSe cambió el directorio de trabajo a $(pwd)"
+
 # Cadena para el nombre de la carpeta de salida y log.
 STAMP=$(date +'d%Y%m%d_t%H%M%S')
 
@@ -65,15 +69,13 @@ echo -e "\nVariable de entorno SAS_CCF configurada: $SAS_CCF" | tee -a "$LOG_FIL
 echo -e "\n----------------------" >> "$LOG_FILE"
 
 # Apuntar la variable SAS_ODF al archivo de resumen generado por odfingest.
-SAS_ODF=$(find $indir -type f -name "*.SAS")
+SAS_ODF=$(find $indir -type f -name "*SUM.SAS")
 export SAS_ODF=$SAS_ODF
 echo -e "\nVariable de entorno SAS_ODF configurada: $SAS_ODF" | tee -a "$LOG_FILE"
 echo -e "\n----------------------" >> "$LOG_FILE"
 
-reduction_path=/home/shluna/Proyectos/rayosX/data/xmm/$obsid
-
 # Buscar los directorios en la carpeta donde se guardan las reducciones y almacenarlos en un array:
-readarray x < <(find $reduction_path -type d -name "PPO_*")
+readarray x < <(find . -type d -name "PPO_*")
 
 printf "\nSe encontraron %s directorios con datos de reducción de observaciones correspondientes al ObsID %s:\n\n" "${#x[@]}" "$obsid"
 if [ "${#x[@]}" -gt 1 ]; then
@@ -93,7 +95,7 @@ fi
 
 printf "\nEl directorio seleccionado es: %s" "$indir"
 
-readarray regfiles < <(ls $indir/*.reg)
+readarray regfiles < <(find . -type f -name "*.reg")
 
 printf "\nLos archivos de regiones son:\n"
 for i in "${!regfiles[@]}"; do
@@ -161,11 +163,7 @@ outdir="products_$STAMP"
 echo -e "\nLos productos se van a guardar en $outdir"
 
 # Crear el directorio de salida si no existe.
-if [ -d $outdir ]; then
-    rm -r $outdir
-fi
-
-mkdir $(echo $outdir)
+mkdir -p $(echo $outdir)
 
 cd $outdir
 
