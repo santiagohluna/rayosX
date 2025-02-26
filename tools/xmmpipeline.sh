@@ -141,14 +141,16 @@ while true; do
     read op
     case $op in
         [Ss]* )
-            echo -e "\nReprocesando los ODF" | tee -a "$LOG_FILE"
+            cd $SAS_ODF
+            echo -e "\nReprocesando los ODF" | tee -a "$RUTA_ESPERADA/$obsid/$outdir/$LOG_FILE"
             # Ejecutar los comandos definidos en el arreglo "REPROC".
             for CMD in "${REPROC[@]}"; do
-                echo -e "\nEjecutando: $CMD" | tee -a "$LOG_FILE"
-                echo >> "$LOG_FILE" 2>&1
-                eval "$CMD" >> "$LOG_FILE" 2>&1
-                echo -e "\n----------------------" >> "$LOG_FILE"
+                echo -e "\nEjecutando: $CMD" | tee -a "$RUTA_ESPERADA/$obsid/$outdir/$LOG_FILE"
+                echo >> "$RUTA_ESPERADA/$obsid/$outdir/$LOG_FILE" 2>&1
+                eval "$CMD" >> "$RUTA_ESPERADA/$obsid/$outdir/$LOG_FILE" 2>&1
+                echo -e "\n----------------------" >> "$RUTA_ESPERADA/$obsid/$outdir/$LOG_FILE"
             done
+            cd $RUTA_ESPERADA/$obsid/$outdir
             break
         ;;
         [Nn]* ) 
@@ -168,7 +170,7 @@ done
 
 echo -e "\n¡Listo!" >> "$LOG_FILE"
 
-echo -e "\nEjecución finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]. Ver $LOG_FILE para detalles.\n" | tee -a "../$LOG_FILE"
+echo -e "\nEjecución finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]. Ver $LOG_FILE para detalles.\n" | tee -a "$LOG_FILE"
 
 echo -e "\nAbrir los archivos PNclean.fits, M1clean.fits y M2clean.fits con ds9 y seleccionar las regiones correspondientes a la fuente y al background para continuar con la generación de productos (espectro y curvas de luz). Guardar las regiones usando las coordenadas físicas.\n" | tee -a  "$LOG_FILE"
 
