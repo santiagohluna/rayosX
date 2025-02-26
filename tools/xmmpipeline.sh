@@ -49,10 +49,12 @@ fi
 # Cadena para el nombre del log.
 STAMP=$(date +'d%Y%m%d_t%H%M%S')
 
+obsidir=$RUTA_ESPERADA/$obsid
+
 # Carpeta donde se van a guardar los productos del pipeline.
 outdir="PPO_"$STAMP
-mkdir -p $RUTA_ESPERADA/$obsid/$outdir
-cd $RUTA_ESPERADA/$obsid/$outdir
+mkdir -p $obsidir/$outdir
+cd $obsidir/$outdir
 echo -e "\nSe cambió el directorio de trabajo a $(pwd)"
 
 # Crear el archivo log
@@ -73,7 +75,7 @@ echo -e "\nVariable de entorno SAS_CCF configurada: $SAS_CCF" | tee -a "$LOG_FIL
 echo -e "\n----------------------" >> "$LOG_FILE"
 
 # Apuntar la variable SAS_ODF al archivo de resumen generado por odfingest.
-SAS_ODF=$(find $indir -type f -name "*.SAS")
+SAS_ODF=$(find $indir -type f -name "*SUM.SAS")
 export SAS_ODF=$SAS_ODF
 echo -e "\nVariable de entorno SAS_ODF configurada: $SAS_ODF" | tee -a "$LOG_FILE"
 echo -e "\n----------------------" >> "$LOG_FILE"
@@ -95,9 +97,9 @@ COMMANDS=(
     #
     # Filtrado de la lista de eventos.
     #
-    "find . -type f -name "*_*_EPN_*_ImagingEvts.ds" -exec cp {} PN.fits \;"
-    "find . -type f -name "*_*_EMOS1_*_ImagingEvts.ds" -exec cp {} M1.fits \;"
-    "find . -type f -name "*_*_EMOS2_*_ImagingEvts.ds" -exec cp {} M2.fits \;"
+    "find $obsidir -type f -name "*_*_EPN_*_ImagingEvts.ds" -exec cp {} PN.fits \;"
+    "find $obsidir -type f -name "*_*_EMOS1_*_ImagingEvts.ds" -exec cp {} M1.fits \;"
+    "find $obsidir -type f -name "*_*_EMOS2_*_ImagingEvts.ds" -exec cp {} M2.fits \;"
     ## Extraer una curva de luz de eventos singulares (con patrón “0”) a energías por encima de 10 keV para cada cámara (PN, MOS1, MOS2) para identificar los intervalos de alto background, usando la tarea `evselect` de SAS:
     "evselect table=PN.fits withrateset=Y rateset=ratesPN.fits maketimecolumn=Y timebinsize=100 makeratecolumn=Y expression='#XMMEA_EP && (PI>10000&&PI<12000) && (PATTERN==0)'"
     "evselect table=M1.fits withrateset=Y rateset=ratesM1.fits maketimecolumn=Y timebinsize=100 makeratecolumn=Y expression='#XMMEA_EM && (PI>10000) && (PATTERN==0)'"
@@ -109,9 +111,9 @@ COMMANDS=(
     "tabgtigen table=ratesM2.fits expression='RATE<=0.35' gtiset=M2gti.fits"
     #
     ##Por último, usamos nuevamente `evselect` para generar la lista de eventos filtrada, `EPICclean.fits`:
-    "evselect table=PN.fits withfilteredset=Y filteredset=PNclean.fits destruct=Y keepfilteroutput=T expression='#XMMEA_EP && gti(PNgti.fits,TIME) && (PI>150)'"
-    "evselect table=M1.fits withfilteredset=Y filteredset=M1clean.fits destruct=Y keepfilteroutput=T expression='#XMMEA_EM && gti(M1gti.fits,TIME) && (PI>150)'"
-    "evselect table=M2.fits withfilteredset=Y filteredset=M2clean.fits destruct=Y keepfilteroutput=T expression='#XMMEA_EM && gti(M2gti.fits,TIME) && (PI>150)'"
+    "evselect table=PN.fits withfilteredset=Y filteredset=PNclean.evts destruct=Y keepfilteroutput=T expression='#XMMEA_EP && gti(PNgti.fits,TIME) && (PI>150)'"
+    "evselect table=M1.fits withfilteredset=Y filteredset=M1clean.evts destruct=Y keepfilteroutput=T expression='#XMMEA_EM && gti(M1gti.fits,TIME) && (PI>150)'"
+    "evselect table=M2.fits withfilteredset=Y filteredset=M2clean.evts destruct=Y keepfilteroutput=T expression='#XMMEA_EM && gti(M2gti.fits,TIME) && (PI>150)'"
 )
 
 echo -e "\nComandos ejecutados" >> "$LOG_FILE"
@@ -141,7 +143,15 @@ while true; do
     read op
     case $op in
         [Ss]* )
-            cd $SAS_ODF
+            # Verificar si el directorio "reproc" existe
+            cd ..
+            if [ -d "reproc" ]; then
+                # Si existe, eliminarlo
+                rm -rf "reproc"
+            fi
+            # Crear el directorio de nuevo
+            mkdir "reproc"
+            cd reproc
             echo -e "\nReprocesando los ODF" | tee -a "$RUTA_ESPERADA/$obsid/$outdir/$LOG_FILE"
             # Ejecutar los comandos definidos en el arreglo "REPROC".
             for CMD in "${REPROC[@]}"; do
@@ -150,7 +160,7 @@ while true; do
                 eval "$CMD" >> "$RUTA_ESPERADA/$obsid/$outdir/$LOG_FILE" 2>&1
                 echo -e "\n----------------------" >> "$RUTA_ESPERADA/$obsid/$outdir/$LOG_FILE"
             done
-            cd $RUTA_ESPERADA/$obsid/$outdir
+            cd ../$outdir
             break
         ;;
         [Nn]* ) 
@@ -169,6 +179,9 @@ for CMD in "${COMMANDS[@]}"; do
 done
 
 echo -e "\n¡Listo!" >> "$LOG_FILE"
+
+echo -e "\nLimpiando."
+rm *.fits
 
 echo -e "\nEjecución finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]. Ver $LOG_FILE para detalles.\n" | tee -a "$LOG_FILE"
 
