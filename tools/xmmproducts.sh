@@ -81,16 +81,15 @@ printf "\nSe encontraron %s directorios con datos de reducción de observaciones
 if [ "${#x[@]}" -gt 1 ]; then
     for i in ${!x[@]}
     do 
-        printf "Directorio $i: ${x[$i]}"
-        i=$((i+1))
+        printf "Directorio $((i+1)): ${x[$i]}"
     done
 
     printf "\nIngrese el índice del directorio donde se almacenan los resultados de la reducción: "
     read idir
 
-    indir=$reduction_path/$(printf %s ${x[$idir]})
+    indir=$(printf %s ${x[$((idir-1))]})
 else
-    indir=$reduction_path/$(printf %s ${x[0]})
+    indir=$(printf %s ${x[0]})
 fi
 
 printf "\nEl directorio seleccionado es: %s" "$indir"
@@ -102,41 +101,43 @@ for i in "${!regfiles[@]}"; do
     printf "Archivo %s: %s" "$i" "${regfiles[$i]}"
 done
 
-# Asignar los archivos a las variables correspondientes
+# Asignar los archivos a las variables correspondientes.
 
-printf "\nIngrese el índice correspondiente al archivo de región de la fuente para la cámara EPIC-PN: "
-read id
+cd $indir
+
+printf "\nIngrese el nombre del archivo de región de la fuente para la cámara EPIC-PN: "
+read -e regfile
 params[0]=${regfiles[$id]}
-printf "\nIngrese el índice correspondiente al archivo de región de la fuente para la cámara EPIC-MOS1: "
-read id
+printf "\nIngrese el nombre del archivo de región de la fuente para la cámara EPIC-MOS1: "
+read -e regfile
 params[1]=${regfiles[$id]}
-printf "\nIngrese el índice correspondiente al archivo de región de la fuente para la cámara EPIC-MOS2: "
-read id
+printf "\nIngrese el nombre del archivo de región de la fuente para la cámara EPIC-MOS2: "
+read -e regfile
 params[2]=${regfiles[$id]}
-printf "\nIngrese el índice correspondiente al archivo de región del background para la cámara EPIC-PN: "
-read id
+printf "\nIngrese el nombre del archivo de región del background para la cámara EPIC-PN: "
+read -e regfile
 params[3]=${regfiles[$id]}
-printf "\nIngrese el índice correspondiente al archivo de región del background para la cámara EPIC-MOS1: "
-read id
+printf "\nIngrese el nombre del archivo de región del background para la cámara EPIC-MOS1: "
+read -e regfile
 params[4]=${regfiles[$id]}
-printf "\nIngrese el índice correspondiente al archivo de región del background para la cámara EPIC-MOS2: "
-read id
+printf "\nIngrese el nombre del archivo de región del background para la cámara EPIC-MOS2: "
+read -e regfile
 params[5]=${regfiles[$id]}
 
-printf "\nLos archivos de regiones son ahora:\n"
-printf "\nFuente (cámara EPIC-PN): %s" "${params[0]}"
-printf "\nFuente (cámara EPIC-MOS1): %s" "${params[1]}"
-printf "\nFuente (cámara EPIC-MOS2): %s" "${params[2]}"
-printf "\nBackground (cámara EPIC-PN): %s" "${params[3]}"
-printf "\nBackground (cámara EPIC-MOS1): %s" "${params[4]}"
-printf "\nBackground (cámara EPIC-MOS2): %s" "${params[5]}"
+printf "\nLos archivos de regiones son:\n"
+printf "\n1. Fuente (cámara EPIC-PN): %s" "${params[0]}"
+printf "\n2. Fuente (cámara EPIC-MOS1): %s" "${params[1]}"
+printf "\n3. Fuente (cámara EPIC-MOS2): %s" "${params[2]}"
+printf "\n4. Background (cámara EPIC-PN): %s" "${params[3]}"
+printf "\n5. Background (cámara EPIC-MOS1): %s" "${params[4]}"
+printf "\n6. Background (cámara EPIC-MOS2): %s" "${params[5]}"
 
 while true; do
     printf "\n¿Desea modificar algunos de los archivos? [(s)í/(n)o] "
     read op
     case $op in
         [Ss]* ) 
-            printf "\nIngrese el índice del archivo a modificar: "
+            printf "\nIngrese el número identificador del archivo a modificar: "
             read i
             printf "\nLos archivos de regiones encontrados en el directorio %s son:\n" "$indir"
             for i in "${!regfiles[@]}"; do
@@ -144,7 +145,7 @@ while true; do
             done
             printf "\nIngrese el indice del archivo a seleccionar: "
             read val
-            regfiles[$i]=$val
+            regfiles[$i]=$((val-1))
 
             echo -e "\nLos parámetros ingresados son ahora:\n"
             i=0
@@ -156,6 +157,8 @@ while true; do
         * ) echo -e "\nDebe ingresar 's' o 'n'.";;
     esac
 done
+
+cd ..
 
 # Crear la carpeta donde se van a almacenar los archivos que resultan de la reducción.
 
