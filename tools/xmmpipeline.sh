@@ -149,6 +149,7 @@ while true; do
                 eval "$CMD" >> "$LOG_FILE" 2>&1
                 echo -e "\n----------------------" >> "$LOG_FILE"
             done
+            break
         ;;
         [Nn]* ) 
             break
