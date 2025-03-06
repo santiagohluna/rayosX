@@ -11,6 +11,9 @@ echo -e '\nScript para el reprocesamiento y filtrado de la lista de eventos de o
 unset SAS_CCF
 unset SAS_ODF
 
+# Ruta al directorio tools
+TOOLSPATH="/home/shluna/Proyectos/rayosX/tools"
+
 # Ruta esperada
 RUTA_ESPERADA="/home/shluna/Proyectos/rayosX/data/xmm"
 
@@ -93,28 +96,48 @@ REPROC=(
     "emproc"
 )
 
-COMMANDS=(
-    #
-    # Filtrado de la lista de eventos.
-    #
-    "find $obsidir -type f -name "*_*_EPN_*_ImagingEvts.ds" -exec cp {} PN.fits \;"
-    "find $obsidir -type f -name "*_*_EMOS1_*_ImagingEvts.ds" -exec cp {} M1.fits \;"
-    "find $obsidir -type f -name "*_*_EMOS2_*_ImagingEvts.ds" -exec cp {} M2.fits \;"
-    ## Extraer una curva de luz de eventos singulares (con patrón “0”) a energías por encima de 10 keV para cada cámara (PN, MOS1, MOS2) para identificar los intervalos de alto background, usando la tarea `evselect` de SAS:
-    "evselect table=PN.fits withrateset=Y rateset=ratesPN.fits maketimecolumn=Y timebinsize=100 makeratecolumn=Y expression='#XMMEA_EP && (PI>10000&&PI<12000) && (PATTERN==0)'"
-    "evselect table=M1.fits withrateset=Y rateset=ratesM1.fits maketimecolumn=Y timebinsize=100 makeratecolumn=Y expression='#XMMEA_EM && (PI>10000) && (PATTERN==0)'"
-    "evselect table=M2.fits withrateset=Y rateset=ratesM2.fits maketimecolumn=Y timebinsize=100 makeratecolumn=Y expression='#XMMEA_EM && (PI>10000) && (PATTERN==0)'"
-    #
-    ## Usando la tarea `tabgtigen` se determinan los intervalos de tiempo en los que la curva de luz es baja y constante eligiendo un límite o *threshold* (en cuentas por segundo) para crear el archivo GTI, `EPICgti.fits`: 
-    "tabgtigen table=ratesPN.fits expression='RATE<=0.4' gtiset=PNgti.fits"
-    "tabgtigen table=ratesM1.fits expression='RATE<=0.35' gtiset=M1gti.fits"
-    "tabgtigen table=ratesM2.fits expression='RATE<=0.35' gtiset=M2gti.fits"
-    #
-    ##Por último, usamos nuevamente `evselect` para generar la lista de eventos filtrada, `EPICclean.fits`:
-    "evselect table=PN.fits withfilteredset=Y filteredset=PNclean.evts destruct=Y keepfilteroutput=T expression='#XMMEA_EP && gti(PNgti.fits,TIME) && (PI>150)'"
-    "evselect table=M1.fits withfilteredset=Y filteredset=M1clean.evts destruct=Y keepfilteroutput=T expression='#XMMEA_EM && gti(M1gti.fits,TIME) && (PI>150)'"
-    "evselect table=M2.fits withfilteredset=Y filteredset=M2clean.evts destruct=Y keepfilteroutput=T expression='#XMMEA_EM && gti(M2gti.fits,TIME) && (PI>150)'"
-)
+# Ruta al archivo con los comandos
+FILE_PATH="$TOOLSPATH/xmmpipeline.cmnds"
+
+# Inicializar un array vacío
+COMMANDS=()
+
+# Leer el archivo línea por línea
+while IFS= read -r line; do
+    # Quitar espacios en blanco al inicio y fin
+    line=$(echo "$line" | sed 's/^[ \t]*//;s/[ \t]*$//')
+
+    # Ignorar líneas vacías o que comienzan con "#" (comentarios)
+    if [[ -z "$line" || "$line" =~ ^# ]]; then
+        continue
+    fi
+
+    # Agregar el comando al array
+    COMMANDS+=("$line")
+done < "$FILE_PATH"
+
+# COMMANDS=(
+#     #
+#     # Filtrado de la lista de eventos.
+#     #
+#     "find $obsidir -type f -name "*_*_EPN_*_ImagingEvts.ds" -exec cp {} PN.fits \;"
+#     "find $obsidir -type f -name "*_*_EMOS1_*_ImagingEvts.ds" -exec cp {} M1.fits \;"
+#     "find $obsidir -type f -name "*_*_EMOS2_*_ImagingEvts.ds" -exec cp {} M2.fits \;"
+#     ## Extraer una curva de luz de eventos singulares (con patrón “0”) a energías por encima de 10 keV para cada cámara (PN, MOS1, MOS2) para identificar los intervalos de alto background, usando la tarea `evselect` de SAS:
+#     "evselect table=PN.fits withrateset=Y rateset=ratesPN.fits maketimecolumn=Y timebinsize=100 makeratecolumn=Y expression='#XMMEA_EP && (PI>10000&&PI<12000) && (PATTERN==0)'"
+#     "evselect table=M1.fits withrateset=Y rateset=ratesM1.fits maketimecolumn=Y timebinsize=100 makeratecolumn=Y expression='#XMMEA_EM && (PI>10000) && (PATTERN==0)'"
+#     "evselect table=M2.fits withrateset=Y rateset=ratesM2.fits maketimecolumn=Y timebinsize=100 makeratecolumn=Y expression='#XMMEA_EM && (PI>10000) && (PATTERN==0)'"
+#     #
+#     ## Usando la tarea `tabgtigen` se determinan los intervalos de tiempo en los que la curva de luz es baja y constante eligiendo un límite o *threshold* (en cuentas por segundo) para crear el archivo GTI, `EPICgti.fits`: 
+#     "tabgtigen table=ratesPN.fits expression='RATE<=0.4' gtiset=PNgti.fits"
+#     "tabgtigen table=ratesM1.fits expression='RATE<=0.35' gtiset=M1gti.fits"
+#     "tabgtigen table=ratesM2.fits expression='RATE<=0.35' gtiset=M2gti.fits"
+#     #
+#     ##Por último, usamos nuevamente `evselect` para generar la lista de eventos filtrada, `EPICclean.fits`:
+#     "evselect table=PN.fits withfilteredset=Y filteredset=PNclean.evts destruct=Y keepfilteroutput=T expression='#XMMEA_EP && gti(PNgti.fits,TIME) && (PI>150)'"
+#     "evselect table=M1.fits withfilteredset=Y filteredset=M1clean.evts destruct=Y keepfilteroutput=T expression='#XMMEA_EM && gti(M1gti.fits,TIME) && (PI>150)'"
+#     "evselect table=M2.fits withfilteredset=Y filteredset=M2clean.evts destruct=Y keepfilteroutput=T expression='#XMMEA_EM && gti(M2gti.fits,TIME) && (PI>150)'"
+# )
 
 echo -e "\nComandos ejecutados" >> "$LOG_FILE"
 echo -e "===================\n" >> "$LOG_FILE"
