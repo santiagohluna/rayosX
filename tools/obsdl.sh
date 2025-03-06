@@ -41,7 +41,7 @@ while [[ $op -ne 3 ]]; do
             case $opt in
                 "1" ) # NuSTAR
                     # Crear la carpeta con el ObsID y cambiar el directorio de trabajo hacia ella.
-                    mkdir -p nustar/"$obsid" && cd $_
+                    mkdir -p nustar/"$obsid"/ODF && cd $_
                     echo -e "\nSe cambió al directorio $(pwd)."
                     LOG_FILE="obsdl_$(date +'d%Y%m%d_t%H%M%S').log"
                     echo "================" >> "$LOG_FILE"
@@ -69,7 +69,7 @@ while [[ $op -ne 3 ]]; do
                     ;;
                 "2" ) # XMM-Newton
                     # Crear la carpeta con el ObsID y cambiar el directorio de trabajo a ella.
-                    mkdir -p xmm/"$obsid" && cd $_
+                    mkdir -p xmm/"$obsid"/ODF && cd $_
                     echo -e "\nSe cambió al directorio $(pwd)."
                     LOG_FILE="obsdl_$(date +'d%Y%m%d_t%H%M%S').log"
                     echo "================" >> "$LOG_FILE"
@@ -78,12 +78,11 @@ while [[ $op -ne 3 ]]; do
                     echo -e "\nObsID: $obsid" >> "$LOG_FILE"
                     echo -e "\nEjecución iniciada [$(date +'%d/%m/%Y - %H:%M:%S')]." >> "$LOG_FILE" 
                     printf "\nComandos ejecutados\n===================\n" >> "$LOG_FILE"
-                    CMD="wget -nH --no-check-certificate --cut-dirs=6 -r -w1 -l0 -c -N -np -R 'index*' -erobots=off \"https://heasarc.gsfc.nasa.gov/FTP/xmm/data/rev0//${obsid}/ODF/\""
+                    CMD="wget -nH --no-check-certificate --cut-dirs=7 -r -w1 -l0 -c -N -np -R 'index*' -erobots=off \"https://heasarc.gsfc.nasa.gov/FTP/xmm/data/rev0//${obsid}/ODF/\""
                     echo -e "\nEjecutando '$CMD'" | tee -a "$LOG_FILE"
                     echo
                     eval $CMD
                     echo -e "\nDescarga finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]." | tee -a "$LOG_FILE"
-                    cd ODF
                     echo -e "\nDescomprimiendo los ODF."
                     if ls *.gz &>/dev/null; then
                         gzip -d *.gz
@@ -95,21 +94,21 @@ while [[ $op -ne 3 ]]; do
                     unset SAS_CCF
                     unset SAS_ODF
                     export SAS_ODF="$RUTA_ESPERADA/xmm/$obsid/ODF"
-                    echo -e "\nApuntar la variable de entorno SAS_ODF a la carpeta donde se encuentran las observaciones recién descargadas: SAS_ODF=$SAS_ODF" | tee -a "../$LOG_FILE"
+                    echo -e "\nApuntar la variable de entorno SAS_ODF a la carpeta donde se encuentran las observaciones recién descargadas: SAS_ODF=$SAS_ODF" | tee -a "$LOG_FILE"
                     echo -e "\nSe cambió al directorio $(pwd)."
-                    echo -e "\nIniciando HEASoft." | tee -a "../$LOG_FILE"
+                    echo -e "\nIniciando HEASoft." | tee -a "$LOG_FILE"
                     eval "heainit"
-                    echo -e "\nIniciando SAS." | tee -a "../$LOG_FILE"
-                    eval "sasinit" >> "../$LOG_FILE" 2>&1
-                    echo -e "\nEjecutando cifbuild." | tee -a "../$LOG_FILE"
-                    echo >> "../$LOG_FILE" 2>&1
-                    cifbuild >> "../$LOG_FILE" 2>&1
+                    echo -e "\nIniciando SAS." | tee -a "$LOG_FILE"
+                    eval "sasinit" >> "$LOG_FILE" 2>&1
+                    echo -e "\nEjecutando cifbuild." | tee -a "$LOG_FILE"
+                    echo >> "$LOG_FILE" 2>&1
+                    cifbuild >> "$LOG_FILE" 2>&1
                     export SAS_CCF="$RUTA_ESPERADA/xmm/$obsid/ODF/ccf.cif"
-                    echo -e "\nApuntar la variable de entorno SAS_CCF al archivo 'ccf.cif' recién creado: SAS_CCF=$SAS_CCF" | tee -a "../$LOG_FILE"
-                    echo -e "\nEjecutando odfingest." | tee -a "../$LOG_FILE"
-                    echo >> "../$LOG_FILE" 2>&1
-                    odfingest >> "../$LOG_FILE" 2>&1
-                    echo -e "\nEjecución finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]." | tee -a "../$LOG_FILE"
+                    echo -e "\nApuntar la variable de entorno SAS_CCF al archivo 'ccf.cif' recién creado: SAS_CCF=$SAS_CCF" | tee -a "$LOG_FILE"
+                    echo -e "\nEjecutando odfingest." | tee -a "$LOG_FILE"
+                    echo >> "$LOG_FILE" 2>&1
+                    odfingest >> "$LOG_FILE" 2>&1
+                    echo -e "\nEjecución finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]." | tee -a "$LOG_FILE"
                     echo -e "\nVer $LOG_FILE para más detalles.\n"
                     cd "$RUTA_ACTUAL"
                     ;;
