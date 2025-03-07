@@ -13,3 +13,5 @@ caldb/
 !*.txt
 !*.png
 !*.cmnds
+!*.ipynb
+!*.py
