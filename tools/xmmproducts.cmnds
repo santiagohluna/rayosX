@@ -46,3 +46,4 @@
 "specgroup spectrumset=PN_src_spectrum.fits mincounts=16 oversample=3 rmfset=PN_src.rmf arfset=PN_src.arf backgndset=PN_src_bkg_spectrum.pha groupedset=PN_src_grp.pha"
 "specgroup spectrumset=M1_src_spectrum.fits mincounts=16 oversample=3 rmfset=M1_src.rmf arfset=M1_src.arf backgndset=M1_src_bkg_spectrum.pha groupedset=M1_src_grp.pha"
 "specgroup spectrumset=M2_src_spectrum.fits mincounts=16 oversample=3 rmfset=M2_src.rmf arfset=M2_src.arf backgndset=M2_src_bkg_spectrum.pha groupedset=M2_src_grp.pha"
+#

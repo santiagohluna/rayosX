@@ -18,3 +18,4 @@ tabgtigen table=ratesM2.fits expression='RATE<=0.35' gtiset=M2gti.fits
 evselect table=PN.fits withfilteredset=Y filteredset=PNclean.evts destruct=Y keepfilteroutput=T expression='#XMMEA_EP && gti(PNgti.fits,TIME) && (PI>150)'
 evselect table=M1.fits withfilteredset=Y filteredset=M1clean.evts destruct=Y keepfilteroutput=T expression='#XMMEA_EM && gti(M1gti.fits,TIME) && (PI>150)'
 evselect table=M2.fits withfilteredset=Y filteredset=M2clean.evts destruct=Y keepfilteroutput=T expression='#XMMEA_EM && gti(M2gti.fits,TIME) && (PI>150)'
+#
