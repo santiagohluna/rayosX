@@ -51,7 +51,7 @@ cd $obsid
 echo -e "\nSe cambió el directorio de trabajo a $(pwd)"
 
 # Buscar los directorios en la carpeta donde se guardan las reducciones y almacenarlos en un array:
-readarray x < <(find . -type d -name "PPO_*")
+readarray x < <(find . -type d -name "PLO_*")
 
 printf "\nSe encontraron %s directorios con datos de reducción de observaciones correspondientes al ObsID %s:\n\n" "${#x[@]}" "$obsid"
 if [ "${#x[@]}" -gt 1 ]; then
@@ -80,6 +80,7 @@ done
 # Asignar los archivos a las variables correspondientes.
 
 cd $indir
+echo -e "\nSe cambió el directorio de trabajo a $(pwd)"
 
 printf "\nIngrese el nombre del archivo de región de la fuente para la cámara EPIC-PN: "
 read -e regfile
@@ -135,6 +136,7 @@ while true; do
 done
 
 cd ..
+echo -e "\nSe cambió el directorio de trabajo a $(pwd)"
 
 # Cadena para el nombre de la carpeta de salida y log.
 STAMP=$(date +'d%Y%m%d_t%H%M%S')
