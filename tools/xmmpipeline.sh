@@ -163,7 +163,7 @@ while true; do
             rm *.fits
 
             echo -e "\nEjecución finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]." | tee -a "$LOG_FILE"
-            echo -e "\n Ver $LOG_FILE para detalles.\n"
+            echo -e "\nVer $LOG_FILE para detalles.\n"
 
             echo -e "\nAbrir los archivos PNclean.fits, M1clean.fits y M2clean.fits con ds9 y seleccionar las regiones correspondientes a la fuente y al background para continuar con la generación de productos (espectro y curvas de luz). Guardar las regiones usando las coordenadas físicas.\n" | tee -a  "$LOG_FILE"
             break
