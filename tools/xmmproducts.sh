@@ -51,10 +51,11 @@ cd $obsid
 echo -e "\nSe cambió el directorio de trabajo a $(pwd)"
 
 # Buscar los directorios en la carpeta donde se guardan las reducciones y almacenarlos en un array:
-readarray x < <(find . -type d -name "PLO_*")
+a=$(find . -type d -name "PLO_*")
+readarray x < <(echo ${a:2:${#a}})
 
-printf "\nSe encontraron %s directorios con datos de reducción de observaciones correspondientes al ObsID %s:\n\n" "${#x[@]}" "$obsid"
 if [ "${#x[@]}" -gt 1 ]; then
+    printf "\nSe encontraron %s directorios con datos de reducción de observaciones correspondientes al ObsID %s:\n\n" "${#x[@]}" "$obsid"
     for i in ${!x[@]}
     do 
         printf "Directorio $((i+1)): ${x[$i]}"
@@ -65,10 +66,14 @@ if [ "${#x[@]}" -gt 1 ]; then
 
     indir=$(printf %s ${x[$((idir-1))]})
 else
+    printf "\nSe encontró 1 directorio con datos de reducción de observaciones correspondientes al ObsID %s: %s\n\n" "$obsid" "${x[0]}"
     indir=$(printf %s ${x[0]})
 fi
 
-printf "\nEl directorio seleccionado es: %s" "$indir"{regfiles[$id]}
+printf "\nEl directorio seleccionado es: %s" "$indir"
+
+cd $indir
+echo -e "\nSe cambió el directorio de trabajo a $(pwd)"
 
 readarray regfiles < <(find . -type f -name "*.reg")
 
@@ -121,7 +126,7 @@ while true; do
                 printf "Archivo %s: %s" "$i" "${regfiles[$i]}"
             done
             printf "\nIngrese el indice del archivo a seleccionar: "
-            read val
+            read -e val
             regfiles[$i]=$((val-1))
 
             echo -e "\nLos parámetros ingresados son ahora:\n"
@@ -261,7 +266,7 @@ done
 
 echo -e "\n¡Listo!" >> "$LOG_FILE"
 
-echo -e "\nEjecución finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]. Ver $LOG_FILE para detalles.\n" | tee -a "../$LOG_FILE"
+echo -e "\nEjecución finalizada [$(date +'%d/%m/%Y - %H:%M:%S')]. Ver $LOG_FILE para detalles.\n" | tee -a "$LOG_FILE"
 
 rm *.fits
 
